@@ -17,9 +17,10 @@ vm_multi:
 vm_cross_connector:
 	env `cat /workspace/.config` CAMKES_VM_APP=vm_cross_connector make build_camkes
 
-build:
-	docker build . -t tiiuae/build:latest
-	docker build -f Dockerfile.l4t . -t tiiuae/l4t:latest
+.PHONY: docker
+
+docker:
+	docker build docker -t tiiuae/build:latest
 
 shell:
-	docker run -it --user l4t --name=l4t-cli --rm=true --net=host --privileged -v ${PWD}:/home/l4t --volume="/dev/bus/usb:/dev/bus/usb" tiiuae/l4t:latest
+	@docker/enter_container.sh

@@ -17,6 +17,7 @@ RUN \
         git \
         cpio \
         sudo \
+        rsync \
         libxml2-utils \
         protobuf-compiler \
         python3-pip \

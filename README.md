@@ -70,7 +70,7 @@ pressure tests.
 ```
 host% repo init -u git@github.com:tiiuae/sel4test-manifest.git -b rpi4
 host% repo sync
-host% enter_container.sh
+host% make shell
 
 guest% export CROSS_COMPILE="aarch64-linux-gnu-"
 guest% mkdir rpi4_build
@@ -91,8 +91,7 @@ in the future. Meanwhile, you need to copy them manually to your source tree.
 ```
 host% repo init -u git@github.com:tiiuae/camkes-vm-examples-manifest.git -b rpi4
 host% repo sync
-host% cp ~/dockerized_sel4_compile/build*.sh .
-host% enter_container.sh
+host% make shell
 
 guest% make rpi4_defconfig
 
