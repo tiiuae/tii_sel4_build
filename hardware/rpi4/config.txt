@@ -1,0 +1,4 @@
+enable_uart=1
+arm_64bit=1
+kernel=u-boot.bin
+enable_jtag_gpio=1
