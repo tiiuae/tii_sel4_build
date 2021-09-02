@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2018-2020, NVIDIA CORPORATION.  All rights reserved.
+ *
+ * NVIDIA CORPORATION and its licensors retain all intellectual property
+ * and proprietary rights in and to this software, related documentation
+ * and any modifications thereto.  Any use, reproduction, disclosure or
+ * distribution of this software and related documentation without an express
+ * license agreement from NVIDIA CORPORATION is strictly prohibited.
+ */
+
+/dts-v1/;
+
+/ {
+	compatible = "nvidia,cboot-options-v1";
+	boot-configuration {
+		/* nvme boot-order can be in "nvme:C<n>", "nvme:pcie@<addr>", or "nvme" format */
+		boot-order = "net", "sd", "usb", "nvme", "emmc";
+		tftp-server-ip = /bits/ 8 <192 168 5 1>;
+		dhcp-enabled;
+		/* remove dhcp-enabled if uncommenting static-ip configuration */
+		/* static-ip = /bits/ 8 <0 0 0 0>;
+		 * ip-netmask = /bits/ 8 <255 255 255 0>;
+		 * ip-gateway = /bits/ 8 <0 0 0 0>;
+		 */
+	};
+};

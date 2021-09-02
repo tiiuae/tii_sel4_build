@@ -5,6 +5,11 @@ rpi4_defconfig:
 	@echo 'NUM_NODES=4' >> .config
 	@echo 'CROSS_COMPILE=aarch64-linux-gnu-' >> .config
 
+xaviernx_defconfig:
+	@echo 'PLATFORM=xaviernx' > .config
+	@echo 'NUM_NODES=1' >> .config
+	@echo 'CROSS_COMPILE=aarch64-linux-gnu-' >> .config
+
 build_camkes: .config
 	@scripts/build_camkes.sh
 
@@ -27,6 +32,19 @@ sel4test:
 
 docker:
 	docker build docker -t tiiuae/build:latest
+	docker build docker -f docker/Dockerfile.l4t -t tiiuae/l4t:latest
 
 shell:
 	@docker/enter_container.sh
+
+l4t:
+	@docker run -it --user l4t --name=l4t-cli --rm=true --net=host --privileged -v ${PWD}:/home/l4t --volume="/dev/bus/usb:/dev/bus/usb" tiiuae/l4t
+
+Linux_for_Tegra/bootloader/cbo.dtb: hardware/xaviernx/cbo.dts
+	dtc -I dts -O dtb -o Linux_for_Tegra/bootloader/cbo.dtb hardware/xaviernx/cbo.dts
+
+xaviernx_buildbl:
+	@hardware/xaviernx/buildbl.sh
+
+xaviernx_flashbl: Linux_for_Tegra/bootloader/cbo.dtb
+	@hardware/xaviernx/flashbl.sh

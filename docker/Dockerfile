@@ -33,6 +33,7 @@ RUN \
         python3-sortedcontainers \
         gcc-aarch64-linux-gnu \
         g++-aarch64-linux-gnu \
+        android-tools-mkbootimg \
         device-tree-compiler
 
 RUN useradd -d /home/build -m -u 1000 build
