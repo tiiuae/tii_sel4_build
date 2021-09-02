@@ -44,6 +44,9 @@ RUN \
         python3-protobuf \
         python3-simpleeval \
         python3-sortedcontainers \
+        gcc-aarch64-linux-gnu \
+        g++-aarch64-linux-gnu \
+        android-tools-mkbootimg \
         device-tree-compiler
 
 # Yocto build dependencies, probably some of these are unnecessarry for

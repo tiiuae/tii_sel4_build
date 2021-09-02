@@ -1,0 +1,23 @@
+FROM ubuntu:18.04
+
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y sudo qemu-user-static usbutils
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python2.7 xxd cpio
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y binutils
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libgconf-2-4 libcanberra-gtk-module locales gdisk
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y gdisk
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y perl
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y make
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y gcc-aarch64-linux-gnu device-tree-compiler
+
+RUN adduser --disabled-password --gecos '' l4t
+RUN usermod -a -G sudo l4t
+
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# CBOOT compiling uses python2.7
+RUN ln -s /usr/bin/python2.7 /usr/bin/python
+
+WORKDIR /home/l4t
+ENTRYPOINT [ "/bin/bash" ]

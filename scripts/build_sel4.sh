@@ -41,6 +41,7 @@ fi
   -DPLATFORM="${PLATFORM}" \
   -DCROSS_COMPILER_PREFIX="${CROSS_COMPILE}" \
   ${TRACE} \
+  ${OPTS} \
   $@
 
 ninja

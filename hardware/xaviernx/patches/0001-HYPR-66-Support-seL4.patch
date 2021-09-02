@@ -1,0 +1,79 @@
+From 1b2b7e17094903fe0e8f7aea189160120b23b58c Mon Sep 17 00:00:00 2001
+From: Hannu Lyytinen <hannu.lyytinen@unikie.com>
+Date: Tue, 17 Aug 2021 10:06:29 +0300
+Subject: [PATCH] HYPR-66 Support seL4
+
+Note that this is not production quality code, see
+https://ssrc.atlassian.net/l/c/2Bgy9FTQ
+
+Signed-off-by: Hannu Lyytinen <hannu.lyytinen@unikie.com>
+---
+ bootloader/partner/common/lib/linuxboot/linux_load.c          | 4 ++++
+ bootloader/partner/t18x/cboot/app/kernel_boot/kernel_boot.c   | 2 ++
+ bootloader/partner/t18x/cboot/engine.mk                       | 2 +-
+ .../partner/t19x/common/lib/linuxboot/t194/linuxboot_helper.c | 2 +-
+ 4 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/bootloader/partner/common/lib/linuxboot/linux_load.c b/bootloader/partner/common/lib/linuxboot/linux_load.c
+index 97947fa..e09fa40 100644
+--- a/bootloader/partner/common/lib/linuxboot/linux_load.c
++++ b/bootloader/partner/common/lib/linuxboot/linux_load.c
+@@ -194,6 +194,10 @@ static tegrabl_error_t extract_kernel(void *boot_img_load_addr,
+ 
+ 	pr_trace("%s(): %u\n", __func__, __LINE__);
+ 
++	pr_info("----------------------------------------------\n");
++	pr_info("--------- TII modifications in place ---------\n");
++	pr_info("----------------------------------------------\n");
++
+ 	hdr = (union tegrabl_bootimg_header *)boot_img_load_addr;
+ 	if (HAS_BOOT_IMG_HDR(hdr)) {
+ 		/* Get kernel addr and size from boot img header */
+diff --git a/bootloader/partner/t18x/cboot/app/kernel_boot/kernel_boot.c b/bootloader/partner/t18x/cboot/app/kernel_boot/kernel_boot.c
+index ebb915b..cd92480 100644
+--- a/bootloader/partner/t18x/cboot/app/kernel_boot/kernel_boot.c
++++ b/bootloader/partner/t18x/cboot/app/kernel_boot/kernel_boot.c
+@@ -97,12 +97,14 @@ tegrabl_error_t load_and_boot_kernel(struct tegrabl_kernel_bin *kernel)
+ 	err = tegrabl_load_kernel_and_dtb(kernel, &kernel_entry_point,
+ 						  &kernel_dtb, &callbacks, NULL, 0);
+ 
++#if 0
+ 	/*
+ 	 * Update smd if a/b retry counter changed
+ 	 * The slot priorities are rotated here too,
+ 	 * in case kernel or kernel-dtb load failed.
+ 	*/
+ 	tegrabl_a_b_update_smd();
++#endif
+ 
+ 	if (err != TEGRABL_NO_ERROR) {
+ 		TEGRABL_SET_HIGHEST_MODULE(err);
+diff --git a/bootloader/partner/t18x/cboot/engine.mk b/bootloader/partner/t18x/cboot/engine.mk
+index 34a61cd..3934683 100644
+--- a/bootloader/partner/t18x/cboot/engine.mk
++++ b/bootloader/partner/t18x/cboot/engine.mk
+@@ -51,7 +51,7 @@ APPEND_VERSION := $(LKROOT)/scripts/add_version_info.py
+ 
+ GLOBAL_INCLUDES := $(BUILDDIR) $(LKROOT)/include $(addsuffix /include,$(LKINC))
+ GLOBAL_OPTFLAGS ?= -Os
+-GLOBAL_COMPILEFLAGS := -g -fno-builtin -finline -W -Wall -Wno-multichar -Wno-unused-parameter -Wno-unused-function -include $(CONFIGHEADER)
++GLOBAL_COMPILEFLAGS := -g -fno-builtin -finline -W -Wall -Wno-multichar -Wno-unused-parameter -Wno-unused-function -include $(CONFIGHEADER) -fno-stack-protector
+ GLOBAL_CFLAGS := --std=gnu99 -Werror-implicit-function-declaration -Wstrict-prototypes
+ GLOBAL_CFLAGS += -Werror=strict-prototypes -Werror=unused-label -Werror=int-to-pointer-cast -Werror=address
+ GLOBAL_CFLAGS += -Werror=array-bounds -Werror=char-subscripts -Werror=enum-compare
+diff --git a/bootloader/partner/t19x/common/lib/linuxboot/t194/linuxboot_helper.c b/bootloader/partner/t19x/common/lib/linuxboot/t194/linuxboot_helper.c
+index 9dd11f5..f002314 100644
+--- a/bootloader/partner/t19x/common/lib/linuxboot/t194/linuxboot_helper.c
++++ b/bootloader/partner/t19x/common/lib/linuxboot/t194/linuxboot_helper.c
+@@ -1643,7 +1643,7 @@ uint64_t tegrabl_get_ramdisk_load_addr(void)
+ 
+ uint64_t tegrabl_get_kernel_text_offset(void)
+ {
+-	return 0x80000;
++	return 0x8000000;
+ }
+ 
+ #if defined(CONFIG_ENABLE_L4T_RECOVERY)
+-- 
+2.39.1
+
