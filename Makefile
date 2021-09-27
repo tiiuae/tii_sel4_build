@@ -1,27 +1,27 @@
-all: vm_minimal vm_multi vm_cross_connector /workspace/.config
+all: vm_minimal vm_multi vm_cross_connector .config
 
 rpi4_defconfig:
-	@echo 'PLATFORM=rpi4' > /workspace/.config
-	@echo 'NUM_NODES=4' >> /workspace/.config
-	@echo 'CROSS_COMPILE=aarch64-linux-gnu-' >> /workspace/.config
+	@echo 'PLATFORM=rpi4' > .config
+	@echo 'NUM_NODES=4' >> .config
+	@echo 'CROSS_COMPILE=aarch64-linux-gnu-' >> .config
 
-build_camkes: /workspace/.config
-	@/workspace/scripts/build_camkes.sh
+build_camkes: .config
+	@scripts/build_camkes.sh
 
-build_sel4test: /workspace/.config
-	@/workspace/scripts/build_sel4test.sh
+build_sel4test: .config
+	@scripts/build_sel4test.sh
 
 vm_minimal:
-	env `cat /workspace/.config` CAMKES_VM_APP=vm_minimal make build_camkes
+	CAMKES_VM_APP=vm_minimal make build_camkes
 
 vm_multi:
-	env `cat /workspace/.config` CAMKES_VM_APP=vm_multi make build_camkes
+	CAMKES_VM_APP=vm_multi make build_camkes
 
 vm_cross_connector:
-	env `cat /workspace/.config` CAMKES_VM_APP=vm_cross_connector make build_camkes
+	CAMKES_VM_APP=vm_cross_connector make build_camkes
 
 sel4test:
-	env `cat /workspace/.config` make build_sel4test
+	make build_sel4test
 
 .PHONY: docker
 

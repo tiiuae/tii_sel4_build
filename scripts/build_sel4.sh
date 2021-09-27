@@ -2,6 +2,12 @@
 
 set -e
 
+. `pwd`/.config
+
+if test "x`pwd`" != "x/workspace"; then
+  exec docker/enter_container.sh `pwd` scripts/build_sel4.sh $@
+fi
+
 BUILDDIR=$1
 shift
 

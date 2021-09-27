@@ -70,7 +70,7 @@ use the ```newgrp``` command). In any case verify with the ```groups``` command.
 host% <b>export WORKDIR=~/sel4</b>
 
 host% <b>mkdir ${WORKDIR} && cd ${WORKDIR}</b>
-host% <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git</b>
+host% <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git -b tii/development</b>
 host% <b>repo sync</b>
 </pre>
 
@@ -83,29 +83,36 @@ host% <b>make docker</b>
 
 <pre>
 host% <b>cd ${WORKDIR}</b>
-host% <b>make shell</b>
 
 # configure for Raspberry Pi 4
 
-container% <b>make rpi4_defconfig</b>
+host% <b>make rpi4_defconfig</b>
 
 # simple seL4 microkernel test
 
-container% <b>make se4ltest</b>
-container% <b>ls -l rpi4_sel4test/images</b>
+host% <b>make sel4test</b>
+host% <b>ls -l rpi4_sel4test/images</b>
 -rwxr-xr-x. 1 build build 5832040 Aug 31 08:31 sel4test-driver-image-arm-bcm2711
 
 # More complex examples with VMs
 
-container% <b>make vm_minimal</b>
-container% <b>ls -l rpi4_vm_minimal/images</b>
+host% <b>make vm_minimal</b>
+host% <b>ls -l rpi4_vm_minimal/images</b>
 -rwxr-xr-x. 1 build build 37641488 Aug 28 02:50 capdl-loader-image-arm-bcm2711
 
-container% <b>make vm_multi</b>
-container% <b>ls -l rpi4_vm_multi/images</b>
+host% <b>make vm_multi</b>
+host% <b>ls -l rpi4_vm_multi/images</b>
 -rwxr-xr-x. 1 build build 51656592 Aug 28 02:52 capdl-loader-image-arm-bcm2711
 
-container% <b>make vm_cross_connector</b>
-container% <b>ls -l rpi4_vm_cross_connector/images</b>
+host% <b>make vm_cross_connector</b>
+host% <b>ls -l rpi4_vm_cross_connector/images</b>
 -rwxr-xr-x. 1 build build 51656608 Aug 28 02:54 capdl-loader-image-arm-bcm2711
+
+# Enter build container interactively -- you get all tools
+# (for example, aarch64-linux-gnu toolchain) without having
+# to install them onto host.
+
+host% <b>make shell</b>
+
+container% <b>aarch64-linux-gnu-objdump -D rpi4_sel4test/kernel/kernel.elf</b>
 </pre>
