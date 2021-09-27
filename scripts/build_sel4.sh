@@ -20,6 +20,10 @@ ln -s /workspace/${SRCDIR}/easy-settings.cmake ${BUILDDIR}
 cd ${BUILDDIR}
 ./init-build.sh -B . -DAARCH64=1 -DPLATFORM=${PLATFORM} -DCROSS_COMPILER_PREFIX=${CROSS_COMPILE} \
 	-DKernelUserStackTraceLength=64 \
+	-DKernelDebugDisableL2Cache=ON \
+	-DKernelDebugDisableL1ICache=ON \
+	-DKernelDebugDisableL1DCache=OFF \
+	-DKernelDebugDisableBranchPrediction=ON \
 	$@
 ninja
 
