@@ -19,6 +19,11 @@ RUN \
         sudo \
         rsync \
         strace \
+        bc \
+        flex \
+        bison \
+        libelf-dev \
+        libssl-dev \
         libxml2-utils \
         protobuf-compiler \
         python3-pip \

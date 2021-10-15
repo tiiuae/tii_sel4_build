@@ -116,3 +116,25 @@ host% <b>make shell</b>
 
 container% <b>aarch64-linux-gnu-objdump -D rpi4_sel4test/kernel/kernel.elf</b>
 </pre>
+
+# Rebuilding guest Linux kernel
+
+Use ```tii_sel4_build/scripts/build_guest_linux.sh``` in a similar fashion as you
+use the ```make``` command in the Linux source tree:
+
+<pre>
+# copy config from projects/camkes-vm-images/${TARGET}/linux-configs
+# and run 'make olddefconfig'
+host% <b>tii_sel4_build/scripts/build_guest_linux.sh olddefconfig</b>
+
+# optionally you can tweak the config
+host% <b>tii_sel4_build/scripts/build_guest_linux.sh menuconfig</b>
+
+# run plain 'make'
+host% <b>tii_sel4_build/scripts/build_guest_linux.sh</b>
+
+# run 'make savedefconfig', copy the resulting defconfig, Image and modules
+# to projects-camkes-vm-images/${TARGET}, note that you must commit the
+# binaries to git yourself.
+host% <b>tii_sel4_build/scripts/build_guest_linux.sh install</b>
+</pre>
