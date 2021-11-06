@@ -134,7 +134,37 @@ host% <b>tii_sel4_build/scripts/build_guest_linux.sh menuconfig</b>
 host% <b>tii_sel4_build/scripts/build_guest_linux.sh</b>
 
 # run 'make savedefconfig', copy the resulting defconfig, Image and modules
-# to projects-camkes-vm-images/${TARGET}, note that you must commit the
+# to projects/camkes-vm-images/${TARGET}, note that you must commit the
 # binaries to git yourself.
 host% <b>tii_sel4_build/scripts/build_guest_linux.sh install</b>
 </pre>
+
+<b>Note that you must execute the install step to use the new kernel. The kernel
+build happens in a temporary directory and only the install step copies it to
+```projects/camkes-vm-images```.</b>
+
+# Rebuilding guest Linux rootfs
+
+Use the ```tii_sel4_build/scripts/build_guest_rootfs.sh``` script, it works the same
+way as the script for building guest Linux kernel.
+
+<pre>
+# copy config from projects/camkes-vm-images/${TARGET}
+# and run 'make olddefconfig'
+host% <b>tii_sel4_build/scripts/build_guest_rootfs.sh olddefconfig</b>
+
+# optionally you can tweak the config
+host% <b>tii_sel4_build/scripts/build_guest_rootfs.sh menuconfig</b>
+
+# run plain 'make'
+host% <b>tii_sel4_build/scripts/build_guest_rootfs.sh</b>
+
+# run 'make savedefconfig', copy the resulting defconfig and rootfs
+# to projects-camkes-vm-images/${TARGET}, note that you must commit the
+# binaries to git yourself.
+host% <b>tii_sel4_build/scripts/build_guest_rootfs.sh install</b>
+</pre>
+
+<b>Note that you must execute the install step to use the new rootfs. The rootfs
+build happens in a temporary directory and only the install step copies it to
+```projects/camkes-vm-images```.</b>

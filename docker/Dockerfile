@@ -8,6 +8,7 @@ RUN \
     apt-get -y update && \
     apt-get -y upgrade && \
     apt-get -y install \
+        locales \
         build-essential \
         fakeroot \
         dpkg-dev \
@@ -18,12 +19,15 @@ RUN \
         cpio \
         sudo \
         rsync \
+        wget \
+        unzip \
         strace \
         bc \
         flex \
         bison \
         libelf-dev \
         libssl-dev \
+        libncurses-dev \
         libxml2-utils \
         protobuf-compiler \
         python3-pip \
@@ -39,6 +43,8 @@ RUN \
         gcc-aarch64-linux-gnu \
         g++-aarch64-linux-gnu \
         device-tree-compiler
+
+RUN locale-gen en_US.UTF-8
 
 RUN useradd -d /home/build -m -u 1000 build
 RUN ln -s /usr/bin/python3 /usr/bin/python
