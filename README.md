@@ -165,6 +165,49 @@ host% <b>tii_sel4_build/scripts/build_guest_rootfs.sh</b>
 host% <b>tii_sel4_build/scripts/build_guest_rootfs.sh install</b>
 </pre>
 
-<b>Note that you must execute the install step to use the new rootfs. The rootfs
-build happens in a temporary directory and only the install step copies it to
-```projects/camkes-vm-images```.</b>
+# Network booting
+
+This seL4 playground boots from network.
+
+## Setting up NFS root
+
+Create a directory on the NFS server:
+
+<pre>
+host% <b>sudo mkdir -p /exports/rpi4</b>
+</pre>
+
+Add this directory to NFS exports:
+
+<pre>
+host% <b>cat /etc/exports</b>
+/exports/rpi4 192.168.5.0/24(rw,no_root_squash)
+host% <b>sudo exportfs -a</b>
+</pre>
+
+## Pass NFS server info via DHCP
+
+<pre>
+host% <b>cat /etc/dhcp/dhcpd.conf</b>
+option domain-name     "local.domain";
+default-lease-time 600;
+max-lease-time 7200;
+authoritative;
+
+subnet 192.168.5.0 netmask 255.255.255.0 {
+    range dynamic-bootp 192.168.5.200 192.168.5.254;
+    option broadcast-address 192.168.5.255;
+    option routers 192.168.5.1;
+
+    option root-path "192.168.5.1:/exports/rpi4,vers=3,proto=tcp";
+}
+</pre>
+
+It is the most convenient to use TCP since the Fedora firewall will block UDP
+by default.
+
+## Extract root filesystem to NFS share
+
+<pre>
+host% <b>sudo tar -C /exports/rpi4 -xjpvf ${WORKSPACE}/vm-images/build/tmp/deploy/images/raspberrypi4-64/vm-image-driver-raspberrypi4-64.tar.bz2</b>
+</pre>
