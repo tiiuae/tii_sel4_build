@@ -67,9 +67,9 @@ use the ```newgrp``` command). In any case verify with the ```groups``` command.
 ## Check out sources
 <pre>
 # Choose a working directory
-host% <b>export WORKDIR=~/sel4</b>
+host% <b>export WORKSPACE=~/sel4</b>
 
-host% <b>mkdir ${WORKDIR} && cd ${WORKDIR}</b>
+host% <b>mkdir ${WORKSPACE} && cd ${WORKSPACE}</b>
 host% <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git -b tii/development</b>
 host% <b>repo sync</b>
 </pre>
@@ -82,7 +82,7 @@ host% <b>make docker</b>
 ## Use it!
 
 <pre>
-host% <b>cd ${WORKDIR}</b>
+host% <b>cd ${WORKSPACE}</b>
 
 # configure for Raspberry Pi 4
 
