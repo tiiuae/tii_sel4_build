@@ -12,4 +12,8 @@ if test "x${CMD}" = "x"; then
   CMD="/bin/bash"
 fi
 
-exec docker run --rm -it -v ${DIR}:/workspace:z tiiuae/build:latest ${CMD}
+exec docker run --rm -it \
+  -v ${DIR}:/workspace:z \
+  -v ${HOME}/.ssh:/home/build/.ssh:z \
+  -v ${HOME}/.gitconfig:/home/build/.gitconfig:z \
+  tiiuae/build:latest ${CMD}
