@@ -66,7 +66,8 @@ use the ```newgrp``` command). In any case verify with the ```groups``` command.
 
 ## Check out sources
 <pre>
-# Choose a working directory
+# Choose a working directory, this will be visible in the container at /workspace
+# (the WORKSPACE variable will point to /workspace as well inside the container)
 host% <b>export WORKSPACE=~/sel4</b>
 
 host% <b>mkdir ${WORKSPACE} && cd ${WORKSPACE}</b>
@@ -94,7 +95,8 @@ host% <b>make sel4test</b>
 host% <b>ls -l rpi4_sel4test/images</b>
 -rwxr-xr-x. 1 build build 5832040 Aug 31 08:31 sel4test-driver-image-arm-bcm2711
 
-# More complex examples with VMs
+# More complex examples with VMs (you need to build the Yocto
+# images first, see below)
 
 host% <b>make vm_minimal</b>
 host% <b>ls -l rpi4_vm_minimal/images</b>
@@ -117,52 +119,76 @@ host% <b>make shell</b>
 container% <b>aarch64-linux-gnu-objdump -D rpi4_sel4test/kernel/kernel.elf</b>
 </pre>
 
-# Rebuilding guest Linux kernel
+# Rebuilding guest VM components
 
-Use ```tii_sel4_build/scripts/build_guest_linux.sh``` in a similar fashion as you
-use the ```make``` command in the Linux source tree:
+We have migrated over to Yocto build system, which builds both the kernel and the
+root filesystem for the guest VM. As such the old helper scripts
+```tii_sel4_build/scripts/build_guest_linux.sh``` and
+```tii_sel4_build/scripts/build_guest_rootfs.sh``` are deleted and you need to
+use the Yocto build system directly.
 
 <pre>
-# copy config from projects/camkes-vm-images/${TARGET}/linux-configs
-# and run 'make olddefconfig'
-host% <b>tii_sel4_build/scripts/build_guest_linux.sh olddefconfig</b>
-
-# optionally you can tweak the config
-host% <b>tii_sel4_build/scripts/build_guest_linux.sh menuconfig</b>
-
-# run plain 'make'
-host% <b>tii_sel4_build/scripts/build_guest_linux.sh</b>
-
-# run 'make savedefconfig', copy the resulting defconfig, Image and modules
-# to projects/camkes-vm-images/${TARGET}, note that you must commit the
-# binaries to git yourself.
-host% <b>tii_sel4_build/scripts/build_guest_linux.sh install</b>
+host% <b>make shell</b>
+container% <b>cd vm-images</b>
+# This command will set up your environment for Yocto builds, so remember
+# to execute it every time you enter the container.
+container% <b>source setup.sh</b>
+container% <b>bitbake vm-image-driver</b>
 </pre>
 
-<b>Note that you must execute the install step to use the new kernel. The kernel
-build happens in a temporary directory and only the install step copies it to
-```projects/camkes-vm-images```.</b>
+Yocto will download and build toolchains and then uses those to build all
+packages (including our seL4 related driver-VM guest extensions). On a first run
+it will take several hours and you need at least 100 GB disk space for the build.
+After the build finishes, you will find the kernel at
+```/workspace/vm-images/build/tmp/deploy/images/raspberrypi4-64/Image-raspberrypi4-64.bin```.
 
-# Rebuilding guest Linux rootfs
+**_NOTE:_** You must copy this kernel image to
+```${WORKSPACE}/projects/camkes-vm-examples/rpi4/linux``` manually until we get
+the build system automation for this.  The guest kernel image is (as of writing
+this) embedded into seL4 boot image, therefore you must build the driver VM
+image and copy the image before compiling the seL4 image.
 
-Use the ```tii_sel4_build/scripts/build_guest_rootfs.sh``` script, it works the same
-way as the script for building guest Linux kernel.
+The root filesystem will be located at
+```/workspace/vm-images/build/tmp/deploy/images/raspberrypi4-64/vm-image-driver-raspberrypi4-64.tar.bz2```.
+The root is mounted over NFS and as such you do not need to copy it to ```camkes-vm-examples```. See instructions
+below on how to make this root filesystem available to NFS clients.
+
+To customize the guest Linux kernel, use facilities Yocto provides:
 
 <pre>
-# copy config from projects/camkes-vm-images/${TARGET}
-# and run 'make olddefconfig'
-host% <b>tii_sel4_build/scripts/build_guest_rootfs.sh olddefconfig</b>
+# Use this to modify just the configs
+container% <b>bitbake -c do_menuconfig linux-raspberrypi</b>
+container% <b>bitbake linux-raspberrypi</b>
 
-# optionally you can tweak the config
-host% <b>tii_sel4_build/scripts/build_guest_rootfs.sh menuconfig</b>
+# With devtool you can edit the sources after Yocto has patched them
+container% <b>devtool modify kernel-module-sel4-virtio</b>
+INFO: Source tree extracted to /workspace/vm-images/build/workspace/sources/kernel-module-sel4-virtio
+INFO: Using source tree as build directory since that would be the default for this recipe
+INFO: Recipe kernel-module-sel4-virtio now set up to build from /workspace/vm-images/build/workspace/sources/kernel-module-sel4-virtio
+</pre>
 
-# run plain 'make'
-host% <b>tii_sel4_build/scripts/build_guest_rootfs.sh</b>
+The module sources are now visible on the host at ```${WORKSPACE}/vm-images/build/workspace/sources/kernel-module-sel4-virtio```,
+use your favorite editor to play with them.
 
-# run 'make savedefconfig', copy the resulting defconfig and rootfs
-# to projects-camkes-vm-images/${TARGET}, note that you must commit the
-# binaries to git yourself.
-host% <b>tii_sel4_build/scripts/build_guest_rootfs.sh install</b>
+<pre>
+# To rebuild the rootfs with changes made to kernel module:
+container% <b>bitbake vm-image-driver</b>
+
+# Commit your changes to temporary git repo devtool made for you
+host% <b>cd ${WORKSPACE}/vm-images/build/workspace/sources/kernel-module-sel4-virtio</b>
+host% <b>git commit -a --signoff</b>
+
+# Use devtool to embed the change commits into meta-sel4 layer as patches:
+container% <b>devtool update-recipe kernel-module-sel4-virtio</b>
+INFO: Adding new patch 0001-Say-hello.patch
+INFO: Updating recipe kernel-module-sel4-virtio_git.bb
+</pre>
+
+You will find patch you made in ```${WORKSPACE}/vm-images/meta-sel4/recipes-kernel/sel4-virtio/kernel-module-sel4-virtio```
+and the patch added to ```SRC_URI``` field in the recipe. To get rid of the working copy:
+
+<pre>
+container% <b>devtool reset kernel-module-sel4-virtio</b>
 </pre>
 
 # Network booting
