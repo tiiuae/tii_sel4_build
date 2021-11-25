@@ -8,6 +8,9 @@ RUN \
     apt-get -y update && \
     apt-get -y upgrade && \
     apt-get -y install \
+        nano \
+        vim \
+        emacs \
         locales \
         build-essential \
         fakeroot \
