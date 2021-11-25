@@ -9,8 +9,6 @@ RUN \
     apt-get -y upgrade && \
     apt-get -y install \
         nano \
-        vim \
-        emacs \
         locales \
         build-essential \
         fakeroot \
@@ -77,7 +75,10 @@ RUN locale-gen en_US.UTF-8
 
 RUN useradd -d /home/build -m -u 1000 build
 RUN ln -s /usr/bin/python3 /usr/bin/python
-
+RUN printf '\n\n\
+eval $(ssh-agent -s &> /dev/null)\n\
+find /home/build/.ssh/ -type f -exec grep -l "PRIVATE" {} \; | xargs ssh-add &> /dev/null'\
+>> /home/build/.bashrc
 USER build
 
 RUN pip3 install \
