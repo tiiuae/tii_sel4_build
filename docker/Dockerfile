@@ -1,4 +1,4 @@
-FROM ubuntu:20.10
+FROM ubuntu:21.04
 
 # tzdata noninteractive install
 ENV TZ=Europe/Helsinki
@@ -9,6 +9,8 @@ RUN \
     apt-get -y upgrade && \
     apt-get -y install \
         nano \
+        vim \
+        emacs \
         locales \
         build-essential \
         fakeroot \
@@ -69,7 +71,8 @@ RUN apt-get -y install \
 # so install them after everything else.
 RUN apt-get -y install \
         gcc-aarch64-linux-gnu \
-        g++-aarch64-linux-gnu
+        g++-aarch64-linux-gnu \
+        gdb-multiarch
 
 RUN locale-gen en_US.UTF-8
 
