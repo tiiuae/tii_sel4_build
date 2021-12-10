@@ -76,7 +76,8 @@ RUN apt-get -y install \
 
 RUN locale-gen en_US.UTF-8
 
-RUN useradd -d /home/build -m -u 1000 build
+RUN useradd -m -d /home/build -s /bin/bash -G sudo -u 1000 build
+RUN echo 'build:build' | chpasswd
 RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN printf '\n\n\
 eval $(ssh-agent -s &> /dev/null)\n\
