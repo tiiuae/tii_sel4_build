@@ -191,6 +191,53 @@ and the patch added to ```SRC_URI``` field in the recipe. To get rid of the work
 container% <b>devtool reset kernel-module-sel4-virtio</b>
 </pre>
 
+# Building Yocto SDK package
+
+TODO: should building/installing the SDK be automated?
+Yocto system can build an SDK package installer. The package is primarily
+meant for application developers, so that they can have a SDK toolchain
+separate from the Yocto build system. We mainly use it to provide GDB debugger,
+because the Ubuntus' multiarch GDB seems to have some oddities.
+
+<pre>
+host% <b>make shell</b>
+container% <b>cd vm-images</b>
+# This command will set up your environment for Yocto builds, so remember
+# to execute it every time you enter the container.
+container% <b>source setup.sh</b>
+container% <b>bitbake vm-image-driver -c populate-sdk</b>
+</pre>
+
+Yocto will download and build toolchains.
+After the build finishes, you will find the SDK at
+```/workspace/vm-images/build/tmp/deploy/sdk/```.
+
+# Installing the SDK after build:
+
+<pre>
+container% <b>./tmp/deploy/sdk/poky-glibc-x86_64-vm-image-driver-cortexa72-raspberrypi4-64-toolchain-3.4.sh</b>
+Poky (Yocto Project Reference Distro) SDK installer version 3.4
+===============================================================
+Enter target directory for SDK (default: /opt/poky/3.4): 
+You are about to install the SDK to "/opt/poky/3.4". Proceed [Y/n]? y
+[sudo] password for build: 
+Extracting SDK.....................................................................done
+Setting it up...done
+SDK has been successfully set up and is ready to be used.
+Each time you wish to use the SDK in a new shell session, you need to source the environment setup script e.g.
+ $ . /opt/poky/3.4/environment-setup-cortexa72-poky-linux
+container% <b>ll /opt/poky/3.4/</b>
+total 24
+drwxr-xr-x. 3 root root   144 Dec 10 11:50 ./
+drwxr-xr-x. 3 root root    17 Dec 10 11:49 ../
+-rw-r--r--. 1 root root  3848 Dec 10 11:50 environment-setup-cortexa72-poky-linux
+-rw-r--r--. 1 root root 14027 Dec 10 11:50 site-config-cortexa72-poky-linux
+drwxr-xr-x. 4 root root    62 Dec 10 11:49 sysroots/
+-rw-r--r--. 1 root root   119 Dec 10 11:50 version-cortexa72-poky-linux
+</pre>
+
+All tools and libraries can now be found from ```/opt/poky/3.4/sysroots/```
+
 # Network booting
 
 This seL4 playground boots from network.

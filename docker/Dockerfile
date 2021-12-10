@@ -71,8 +71,7 @@ RUN apt-get -y install \
 # so install them after everything else.
 RUN apt-get -y install \
         gcc-aarch64-linux-gnu \
-        g++-aarch64-linux-gnu \
-        gdb-multiarch
+        g++-aarch64-linux-gnu
 
 RUN locale-gen en_US.UTF-8
 
