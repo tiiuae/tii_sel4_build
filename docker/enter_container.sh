@@ -16,4 +16,5 @@ exec docker run --rm -it \
   -v ${DIR}:/workspace:z \
   -v ${HOME}/.ssh:/home/build/.ssh:z \
   -v ${HOME}/.gitconfig:/home/build/.gitconfig:z \
+  --add-host host.docker.internal:host-gateway \
   tiiuae/build:latest ${CMD}
