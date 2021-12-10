@@ -11,6 +11,7 @@ RUN \
         nano \
         vim \
         emacs \
+        file \
         locales \
         build-essential \
         fakeroot \
