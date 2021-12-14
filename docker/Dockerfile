@@ -83,6 +83,7 @@ RUN printf '\n\n\
 eval $(ssh-agent -s &> /dev/null)\n\
 find /home/build/.ssh/ -type f -exec grep -l "PRIVATE" {} \; | xargs ssh-add &> /dev/null'\
 >> /home/build/.bashrc
+RUN printf 'add-auto-load-safe-path /workspace/.gdbinit' >> /home/build/.gdbinit
 USER build
 
 RUN pip3 install \
