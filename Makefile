@@ -11,6 +11,8 @@ build_camkes: .config
 build_sel4test: .config
 	@scripts/build_sel4test.sh
 
+include $(wildcard projects/*/Makefile.tii_sel4_build)
+
 vm_minimal:
 	CAMKES_VM_APP=vm_minimal make build_camkes
 
