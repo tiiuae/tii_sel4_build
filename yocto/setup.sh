@@ -6,8 +6,8 @@ else
 fi
 LAYERS_ROOT="$(realpath -e "$(dirname "$SCRIPT")")"
 
-# qemuarm64 is a more generic target
-export MACHINE=raspberrypi4-64
+# default to VM target
+export MACHINE=${MACHINE:-vm-raspberrypi4-64}
 
 . "${LAYERS_ROOT}/poky/oe-init-build-env" "$@"
 
