@@ -9,9 +9,10 @@ if test "x`pwd`" != "x/workspace"; then
 fi
 
 BASEDIR=/workspace/linux-images
-BUILDDIR=${BASEDIR}/build-${PLATFORM}
-SRCDIR=${BASEDIR}/${PLATFORM}
-CONFIG=${SRCDIR}/${PLATFORM}-linux-config
+SRCDIR=/workspace/projects/torvalds/linux
+BUILDDIR=${BASEDIR}/linux-build-${PLATFORM}
+PLATDIR=${BASEDIR}/${PLATFORM}
+CONFIG=${PLATDIR}/${PLATFORM}-linux-config
 
 cd ${BASEDIR}
 export ARCH=arm64
@@ -40,11 +41,11 @@ case "${OP}" in
   install)
     make O=${BUILDDIR} savedefconfig
     cp ${BUILDDIR}/defconfig ${CONFIG}
-    cp ${BUILDDIR}/arch/arm64/boot/Image ${SRCDIR}/${PLATFORM}-linux-image
-    cp ${BUILDDIR}/Module.symvers ${SRCDIR}/${PLATFORM}-linux-configs
+    cp ${BUILDDIR}/arch/arm64/boot/Image ${PLATDIR}/${PLATFORM}-linux-image
+    cp ${BUILDDIR}/Module.symvers ${PLATDIR}/${PLATFORM}-linux-symvers
     TMPDIR=`mktemp -d`
     make O=${BUILDDIR} INSTALL_MOD_PATH=${TMPDIR} modules_install
-    rsync -avP --delete ${TMPDIR}/ ${SRCDIR}/${PLATFORM}-linux-modules
+    rsync -avP --delete ${TMPDIR}/ ${PLATDIR}/${PLATFORM}-linux-modules
     rm -rf ${TMPDIR}
     ;;
 esac

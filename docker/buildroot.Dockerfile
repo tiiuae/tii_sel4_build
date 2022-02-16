@@ -15,7 +15,7 @@ RUN \
         nano \
         vim \
         emacs \
-        which \
+        debianutils \
         sed \
         make \
         binutils \

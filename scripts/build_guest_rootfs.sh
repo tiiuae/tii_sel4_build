@@ -9,11 +9,12 @@ if test "x`pwd`" != "x/workspace"; then
 fi
 
 BASEDIR=/workspace/linux-images
-BUILDDIR=${BASEDIR}/buildroot/build-${PLATFORM}
-SRCDIR=${BASEDIR}/${PLATFORM}/buildroot
-CONFIG=${SRCDIR}/${PLATFORM}-buildroot-config
+SRCDIR=/workspace/projects/buildroot
+BUILDDIR=${BASEDIR}/buildroot-build-${PLATFORM}
+PLATDIR=${BASEDIR}/${PLATFORM}
+CONFIG=${PLATDIR}/${PLATFORM}-buildroot-config
 
-cd ${BASEDIR}/buildroot
+cd ${BASEDIR}
 export ARCH=arm64
 export CROSS_COMPILE
 
@@ -37,6 +38,6 @@ case "${OP}" in
   install)
     make O=${BUILDDIR} savedefconfig
     cp ${BUILDDIR}/config ${CONFIG}
-    cp ${BUILDDIR}/images/rootfs.cpio.gz ${SRCDIR}/${PLATFORM}-rootfs.cpio.gz
+    cp ${BUILDDIR}/images/rootfs.cpio.gz ${PLATDIR}/${PLATFORM}-rootfs.cpio.gz
     ;;
 esac
