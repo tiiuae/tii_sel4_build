@@ -1,8 +1,16 @@
 #! /bin/sh
 
-DIR=$1
-if test "x${DIR}" = "x"; then
-  DIR=`pwd`
+WORKDIR=$1
+if test "x${WORKDIR}" = "x"; then
+  WORKDIR=`pwd`
+else
+  shift
+fi
+
+DOCKERIMG=$2
+if test "x${DOCKERIMG}" = "x"; then
+  echo "Please specify the Docker image to run!"
+  exit 1
 else
   shift
 fi
@@ -13,8 +21,8 @@ if test "x${CMD}" = "x"; then
 fi
 
 exec docker run --rm -it \
-  -v ${DIR}:/workspace:z \
+  -v ${WORKDIR}:/workspace:z \
   -v ${HOME}/.ssh:/home/build/.ssh:z \
   -v ${HOME}/.gitconfig:/home/build/.gitconfig:z \
   --add-host host.docker.internal:host-gateway \
-  tiiuae/build:latest ${CMD}
+  tiiuae/${DOCKERIMG}:latest ${CMD}

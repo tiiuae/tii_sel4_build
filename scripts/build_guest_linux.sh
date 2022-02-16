@@ -5,16 +5,15 @@ set -e
 . `pwd`/.config
 
 if test "x`pwd`" != "x/workspace"; then
-  exec docker/enter_container.sh `pwd` scripts/build_guest_linux.sh $@
+  exec docker/enter_container.sh `pwd` buildroot_build scripts/build_guest_linux.sh $@
 fi
 
-BUILDDIR=/workspace/linux/build-${PLATFORM}
-SRCDIR=/workspace/projects/camkes-vm-images/${PLATFORM}
-CONFIG=${SRCDIR}/linux_configs/config
+BASEDIR=/workspace/linux-images
+BUILDDIR=${BASEDIR}/build-${PLATFORM}
+SRCDIR=${BASEDIR}/${PLATFORM}
+CONFIG=${SRCDIR}/${PLATFORM}-linux-config
 
-
-cd /workspace/linux
-
+cd ${BASEDIR}
 export ARCH=arm64
 export CROSS_COMPILE
 
@@ -41,11 +40,11 @@ case "${OP}" in
   install)
     make O=${BUILDDIR} savedefconfig
     cp ${BUILDDIR}/defconfig ${CONFIG}
-    cp ${BUILDDIR}/arch/arm64/boot/Image ${SRCDIR}/linux
-    cp ${BUILDDIR}/Module.symvers ${SRCDIR}/linux_configs
+    cp ${BUILDDIR}/arch/arm64/boot/Image ${SRCDIR}/${PLATFORM}-linux-image
+    cp ${BUILDDIR}/Module.symvers ${SRCDIR}/${PLATFORM}-linux-configs
     TMPDIR=`mktemp -d`
     make O=${BUILDDIR} INSTALL_MOD_PATH=${TMPDIR} modules_install
-    rsync -avP --delete ${TMPDIR}/ ${SRCDIR}/modules
+    rsync -avP --delete ${TMPDIR}/ ${SRCDIR}/${PLATFORM}-linux-modules
     rm -rf ${TMPDIR}
     ;;
 esac

@@ -5,16 +5,15 @@ set -e
 . `pwd`/.config
 
 if test "x`pwd`" != "x/workspace"; then
-  exec docker/enter_container.sh `pwd` scripts/build_guest_rootfs.sh $@
+  exec docker/enter_container.sh `pwd` buildroot_build scripts/build_guest_rootfs.sh $@
 fi
 
-BUILDDIR=/workspace/buildroot/build-${PLATFORM}
-SRCDIR=/workspace/projects/camkes-vm-images/${PLATFORM}
-CONFIG=${SRCDIR}/buildroot/buildroot-config
+BASEDIR=/workspace/linux-images
+BUILDDIR=${BASEDIR}/buildroot/build-${PLATFORM}
+SRCDIR=${BASEDIR}/${PLATFORM}/buildroot
+CONFIG=${SRCDIR}/${PLATFORM}-buildroot-config
 
-
-cd /workspace/buildroot
-
+cd ${BASEDIR}/buildroot
 export ARCH=arm64
 export CROSS_COMPILE
 
@@ -38,6 +37,6 @@ case "${OP}" in
   install)
     make O=${BUILDDIR} savedefconfig
     cp ${BUILDDIR}/config ${CONFIG}
-    cp ${BUILDDIR}/images/rootfs.cpio.gz ${SRCDIR}/rootfs.cpio.gz
+    cp ${BUILDDIR}/images/rootfs.cpio.gz ${SRCDIR}/${PLATFORM}-rootfs.cpio.gz
     ;;
 esac

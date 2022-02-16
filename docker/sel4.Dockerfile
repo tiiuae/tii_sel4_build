@@ -44,33 +44,7 @@ RUN \
         python3-protobuf \
         python3-simpleeval \
         python3-sortedcontainers \
-        device-tree-compiler
-
-# Yocto build dependencies, probably some of these are unnecessarry for
-# our use case (like 'xterm').
-RUN apt-get -y install \
-        gawk \
-        wget \
-        git-core \
-        diffstat \
-        unzip \
-        texinfo \
-        gcc-multilib \
-        build-essential \
-        chrpath \
-        socat \
-        libsdl1.2-dev \
-        xterm \
-        liblz4-tool \
-        zstd
-
-# screen is required by linux menuconfig
-RUN apt-get -y install \
-        screen
-
-# Yocto build dependencies will uninstall these cross-compilers,
-# so install them after everything else.
-RUN apt-get -y install \
+        device-tree-compiler \
         gcc-aarch64-linux-gnu \
         g++-aarch64-linux-gnu
 
@@ -83,7 +57,6 @@ RUN printf '\n\n\
 eval $(ssh-agent -s &> /dev/null)\n\
 find /home/build/.ssh/ -type f -exec grep -l "PRIVATE" {} \; | xargs ssh-add &> /dev/null'\
 >> /home/build/.bashrc
-RUN printf 'add-auto-load-safe-path /workspace/.gdbinit' >> /home/build/.gdbinit
 USER build
 
 RUN pip3 install \
