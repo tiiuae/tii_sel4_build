@@ -8,45 +8,45 @@ RUN \
     apt-get -y update && \
     apt-get -y upgrade && \
     apt-get -y install \
-        nano \
-        vim \
-        emacs \
-        file \
-        locales \
-        build-essential \
-        fakeroot \
-        dpkg-dev \
-        cmake \
-        ninja-build \
-        haskell-stack \
-        git \
-        cpio \
-        sudo \
-        rsync \
-        wget \
-        unzip \
-        strace \
         bc \
-        flex \
         bison \
+        build-essential \
+        cmake \
+        cpio \
+        device-tree-compiler \
+        dpkg-dev \
+        emacs \
+        fakeroot \
+        file \
+        flex \
+        g++-aarch64-linux-gnu \
+        gcc-aarch64-linux-gnu \
+        git \
+        haskell-stack \
         libelf-dev \
-        libssl-dev \
         libncurses-dev \
+        libssl-dev \
         libxml2-utils \
+        locales \
+        nano \
+        ninja-build \
         protobuf-compiler \
-        python3-pip \
-        python3-pyelftools \
         python3-future \
         python3-jinja2 \
         python3-jsonschema \
         python3-libarchive-c \
+        python3-pip \
         python3-ply \
         python3-protobuf \
+        python3-pyelftools \
         python3-simpleeval \
         python3-sortedcontainers \
-        device-tree-compiler \
-        gcc-aarch64-linux-gnu \
-        g++-aarch64-linux-gnu
+        rsync \
+        strace \
+        sudo \
+        unzip \
+        vim \
+        wget
 
 RUN locale-gen en_US.UTF-8
 

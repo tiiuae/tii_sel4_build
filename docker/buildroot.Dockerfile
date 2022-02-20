@@ -12,37 +12,39 @@ RUN \
     apt-get -y update && \
     apt-get -y upgrade && \
     apt-get -y install \
-        nano \
-        vim \
-        emacs \
-        debianutils \
-        sed \
-        make \
-        binutils \
-        build-essential \
-        gcc \
-        g++ \
         bash \
-        patch \
-        gzip \
-        bzip2 \
-        perl \
-        tar \
-        cpio \
-        unzip \
-        file \
         bc \
-        python3 \
+        binutils \
+        bison \
+        build-essential \
+        bzip2 \
+        cpio \
+        debianutils \
+        device-tree-compiler \
+        emacs \
+        file \
+        flex \
+        g++ \
+        g++-aarch64-linux-gnu \
+        gcc \
+        gcc-aarch64-linux-gnu \
+        git \
+        gzip \
         libncurses5 \
         libncurses5-dev \
-        wget \
-        git \
-        rsync \
         locales \
-        unzip \
-        cpio \
+        make \
+        nano \
+        patch \
+        perl \
+        python3 \
+        rsync \
+        sed \
         sudo \
-        device-tree-compiler
+        tar \
+        unzip \
+        vim \
+        wget
 
 # screen is required by linux menuconfig
 RUN apt-get -y install \
@@ -58,10 +60,6 @@ eval $(ssh-agent -s &> /dev/null)\n\
 find /home/build/.ssh/ -type f -exec grep -l "PRIVATE" {} \; | xargs ssh-add &> /dev/null'\
 >> /home/build/.bashrc
 USER build
-
-# Clone the buildroot repo
-# RUN git clone --branch 2021.11.1 https://git.buildroot.net/buildroot.git \
-#         /home/build/buildroot.git
 
 ENV WORKSPACE=/workspace
 

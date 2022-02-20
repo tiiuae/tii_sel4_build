@@ -8,44 +8,47 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # https://docs.yoctoproject.org/ref-manual/system-requirements.html#required-packages-for-the-build-host
 # https://docs.yoctoproject.org/migration-guides/migration-3.4.html#new-host-dependencies
 #
-RUN apt-get -y install \
-        nano \
-        vim \
-        emacs \
-        file \
-        locales \
-        sudo \
-        rsync \
-        unzip \
-        gawk \
-        wget \
-        git \
-        diffstat \
-        unzip \
-        texinfo \
-        gcc \
+RUN \
+    apt-get -y update && \
+    apt-get -y upgrade && \
+    apt-get -y install \
         build-essential \
         chrpath \
-        socat \
         cpio \
-        python3 \
-        python3-pip \
-        python3-pexpect \
-        xz-utils \
         debianutils \
+        diffstat \
+        emacs \
+        file \
+        g++-aarch64-linux-gnu \
+        gawk \
+        gcc-aarch64-linux-gnu \
+        git \
         iputils-ping \
+        libegl1-mesa \
+        liblz4-tool \
+        libsdl1.2-dev \
+        locales \
+        make \
+        mesa-common-dev \
+        nano \
+        pylint3 \
+        python3 \
         python3-git \
         python3-jinja2 \
-        libegl1-mesa \
-        libsdl1.2-dev \
-        pylint3 \
-        xterm \
+        python3-pexpect \
+        python3-pip \
+        python3-pip \
         python3-subunit \
-        mesa-common-dev \
-        zstd \
-        liblz4-tool \
-        make \
-        python3-pip
+        rsync \
+        socat \
+        sudo \
+        texinfo \
+        unzip \
+        vim \
+        wget \
+        xterm \
+        xz-utils \
+        zstd
 
 # screen is required by linux menuconfig
 RUN apt-get -y install \
