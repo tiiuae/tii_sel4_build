@@ -1,0 +1,24 @@
+---
+# Copyright 2022, Technology Innovation Institute
+
+name: Build camkes VM image
+description: Build sel4 camkes VM image
+inputs:
+  CONFIG:
+    description: 'Make config'
+    required: true
+    default: 'rpi4_defconfig'
+
+  TARGET:
+    description: 'VM make target'
+    required: true
+    default: 'vm_minimal'
+
+  WORKSPACE:
+    description: 'Source directory'
+    required: false
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+

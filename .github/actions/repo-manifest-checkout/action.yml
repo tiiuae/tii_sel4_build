@@ -1,0 +1,52 @@
+---
+# Copyright 2022, Technology Innovation Institute
+
+name: Checkout repo manifest
+description: |
+  Checkout multiple repositories using repo tool with given manifest
+
+inputs:
+  MANIFEST_URL:
+    description: 'Repo manifest repository'
+    required: true
+
+  MANIFEST_REVISION:
+    description: 'Branch, tag or commit hash'
+    required: true
+
+  MANIFEST:
+    description: 'Name of the manifest file'
+    required: true
+    default: 'default.xml'
+
+  SSH_KEY:
+    description: 'Optional ssh key for cloning'
+    required: false
+
+  SSH_KNOWN_HOSTS:
+    description: 'Optional ssh host verification keys'
+    required: false
+
+  SSH_KEYSCAN_URL:
+    description: 'Optional url for collecting public host verification keys'
+    required: false
+
+  REPO_INIT_OPTS:
+    description: 'Repo init options'
+    required: false
+
+  REPO_SYNC_OPTS:
+    description: 'Repo sync options'
+    required: false
+
+  WORKSPACE:
+    description: 'Directory where to checkout'
+    required: false
+
+outputs:
+  manifest-xml:
+    description: Repo manifest xml data with revisions
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
