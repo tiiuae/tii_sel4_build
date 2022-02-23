@@ -1,0 +1,76 @@
+---
+# Copyright 2022, Technology Innovation Institute
+
+name: Build vm images
+on:
+  workflow_call:
+    inputs:
+      manifest-url:
+        description: 'Manifest repository'
+        default: 'git@github.com:tiiuae/tii_sel4_manifest.git'
+        required: false
+        type: string
+      manifest-revision:
+        description: 'Manifest revision'
+        default: 'tii/development'
+        required: false
+        type: string
+      manifest-file:
+        description: 'Manifest file'
+        default: 'default.xml'
+        required: false
+        type: string
+      platform:
+        description: 'Platform config'
+        default: 'rpi4_defconfig'
+        required: false
+        type: string
+
+    secrets:
+      ssh-key:
+        description: 'ssh key for checking out source code'
+        required: true
+
+jobs:
+  build_images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code for using local actions
+        uses: actions/checkout@v2
+
+      - name: Checkout code
+        id: checkout
+        uses: ./.github/actions/repo-manifest-checkout
+        with:
+          MANIFEST_URL: ${{ inputs.manifest-url }}
+          MANIFEST_REVISION: ${{ inputs.manifest-revision }}
+          MANIFEST: ${{ inputs.manifest-file }}
+          SSH_KEY: ${{ secrets.ssh-key }}
+          SSH_KEYSCAN_URL: 'github.com'
+          WORKSPACE: './workspace'
+
+      - name: Dump build info
+        run: |
+          echo "Using manifest:"
+          echo -e '${{ steps.checkout.outputs.manifest-xml }}'
+
+      - name: Build vm_minimal
+        uses: ./.github/actions/vm-image
+        with:
+          CONFIG: ${{ inputs.platform }}
+          TARGET: 'vm_minimal'
+          WORKSPACE: './workspace'
+
+      - name: Build vm_multi
+        uses: ./.github/actions/vm-image
+        with:
+          CONFIG: ${{ inputs.platform }}
+          TARGET: 'vm_multi'
+          WORKSPACE: './workspace'
+
+      - name: Build sel4test
+        uses: ./.github/actions/vm-image
+        with:
+          CONFIG: ${{ inputs.platform }}
+          TARGET: 'sel4test'
+          WORKSPACE: './workspace'
