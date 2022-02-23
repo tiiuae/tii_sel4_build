@@ -2,101 +2,92 @@
 
 set -e
 
-SCRIPT_NAME=$(realpath $0)
-SCRIPT_DIR=$(dirname ${SCRIPT_NAME})
-
-. "${SCRIPT_DIR}/utils.sh"
 . "$(pwd)/.config"
 
 if test "x$(pwd)" != "x/workspace"; then
-  exec docker/enter_container.sh -i buildroot -w $(pwd) scripts/build_guest_rootfs.sh $@
+  exec docker/enter_container.sh buildroot $(pwd) scripts/build_guest_rootfs.sh $@
 fi
 
-BASEDIR=""
-SRCDIR=""
-ACTION=""
-OTHER_ARGS=""
+ACTION="$1"
 
-SKIP=false
-# Parse arguments
-for ARG in "$@"; do
-  if $SKIP; then
-    SKIP=false && continue
-  fi
-  case "$ARG" in
-    -b)
-      shift
-      if test -n "$BASEDIR"; then
-        die "ERROR: Multiple definitions for parameter BASEDIR (-b)!"
-      else
-        BUILDDIR="$1"
-      fi
-      SKIP=true
-      ;;
-    -s)
-      shift
-      if test -n "$SRCDIR"; then
-        die "ERROR: Multiple definitions for parameter SRCDIR (-s)!"
-      else
-        SRCDIR="$1"
-      fi
-      SKIP=true
-      ;;
-    -a)
-      shift
-      if test -n "$ACTION"; then
-        die "ERROR: Multiple definitions for parameter ACTION (-a)!"
-      else
-        ACTION="$1"
-      fi
-      SKIP=true
-      ;;
-    *)
-      # Treat everything else as args to init-build
-      OTHER_ARGS="$OTHER_ARGS $ARG "
-      ;;
-  esac
-  shift
-done
-
-# Validate input arguments.
-# All params are optional.
-#
 if test -z "$BASEDIR"; then
   BASEDIR=/workspace/tii_sel4_build/linux-images
 fi
 
-if test -z "$SRCDIR"; then
-  SRCDIR=/workspace/projects/buildroot
+if test -z "$BRSRCDIR"; then
+  BRSRCDIR=/workspace/projects/buildroot
+fi
+
+if test -z "$KERNELSRCDIR"; then
+  KERNELSRCDIR=/workspace/projects/torvalds/linux
 fi
 
 if test -z "$ACTION"; then
 	ACTION=build
 fi
 
-BUILDDIR=${BASEDIR}/buildroot-build-${PLATFORM}
+BUILDDIR=${BASEDIR}/${PLATFORM}/buildroot-build
 PLATDIR=${BASEDIR}/${PLATFORM}
-CONFIG=${PLATDIR}/${PLATFORM}-buildroot-config
+BR_CONFIG=${PLATDIR}/buildroot-config
+BR_CONFIG_DEST=${BUILDDIR}/br-config
+SDKPREFIX=aarch64-buildroot-linux-uclibc-sdk
+GUEST_KERNEL_VERSION=$(make -C ${KERNELSRCDIR} -s kernelversion)
 
-cd ${SRCDIR}
+cd ${BRSRCDIR}
 export ARCH=arm64
 export CROSS_COMPILE
+export GUEST_KERNEL_VERSION=${GUEST_KERNEL_VERSION}
 
 case "$ACTION" in
   olddefconfig)
     mkdir -p ${BUILDDIR}
-    cp ${CONFIG} ${BUILDDIR}/config
-    make O=${BUILDDIR} BR2_DEFCONFIG=${BUILDDIR}/config defconfig ${OTHER_ARGS}
+    cp -v ${BR_CONFIG} ${BR_CONFIG_DEST}
+    make O=${BUILDDIR} \
+        BR2_DEFCONFIG=${BR_CONFIG_DEST} \
+        defconfig
     ;;
   menuconfig)
-    make O=${BUILDDIR} menuconfig ${OTHER_ARGS}
+    make O=${BUILDDIR} menuconfig
+    ;;
+  clean)
+    make O=${BUILDDIR} clean
+    ;;
+  dirclean)
+    make O=${BUILDDIR} dirclean
     ;;
   build)
-    make O=${BUILDDIR} -j$(nproc) all ${OTHER_ARGS}
+    make O=${BUILDDIR} -j$(nproc) all
+    ;;
+  savedefconfig)
+    make O=${BUILDDIR} savedefconfig
+    cp -v ${BR_CONFIG_DEST} ${BR_CONFIG}
     ;;
   install)
-    make O=${BUILDDIR} savedefconfig ${OTHER_ARGS}
-    cp ${BUILDDIR}/config ${CONFIG}
-    cp ${BUILDDIR}/images/rootfs.cpio.gz ${PLATDIR}/${PLATFORM}-rootfs.cpio.gz
+    make O=${BUILDDIR} savedefconfig
+    cp -v ${BR_CONFIG_DEST} ${BR_CONFIG}
+    mkdir -p ${PLATDIR}/images
+    rsync -avP --delete ${BUILDDIR}/images/ ${PLATDIR}/images
+    ;;
+  sdk)
+    make O=${BUILDDIR} BR2_SDK_PREFIX=${SDKPREFIX} sdk
+    ;;
+  extractsdk)
+    mkdir -p ${BUILDDIR}/sdk
+    tar -xvf ${PLATDIR}/${SDKPREFIX}.tar.gz -C ${BUILDDIR}/sdk
+    ;;
+  installsdk)
+    make O=${BUILDDIR} savedefconfig
+    cp -v ${BR_CONFIG_DEST} ${BR_CONFIG}
+    cp -v ${BUILDDIR}/images/${SDKPREFIX}.tar.gz ${PLATDIR}/${SDKPREFIX}.tar.gz
+    ;;
+  shell)
+    export BASEDIR=${BASEDIR}
+    export BRSRCDIR=${BRSRCDIR}
+    export BUILDDIR=${BUILDDIR}
+    export PLATDIR=${PLATDIR}
+    export BR_CONFIG=${BR_CONFIG}
+    export BR_CONFIG_DEST=${BR_CONFIG_DEST}
+    export SDKPREFIX=${SDKPREFIX}
+    /bin/bash
     ;;
 esac

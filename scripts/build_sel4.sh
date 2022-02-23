@@ -2,66 +2,31 @@
 
 set -e
 
-SCRIPT_NAME=$(realpath $0)
-SCRIPT_DIR=$(dirname ${SCRIPT_NAME})
-
-. "${SCRIPT_DIR}/utils.sh"
 . "$(pwd)/.config"
 
 if test "x$(pwd)" != "x/workspace"; then
-  exec docker/enter_container.sh -i sel4 -w $(pwd) scripts/build_sel4.sh $@
+  exec docker/enter_container.sh sel4 $(pwd) scripts/build_sel4.sh $@
 fi
 
-BUILDDIR=""
-SRCDIR=""
+BUILDDIR="$1"
+shift
+SRCDIR="$1"
+shift
 OTHER_ARGS=""
-
-SKIP=false
-# Parse arguments
-for ARG in "$@"; do
-  if $SKIP; then
-    SKIP=false && continue
-  fi
-  case "$ARG" in
-    -b)
-      shift
-      if test -n "$BUILDDIR"; then
-        die "ERROR: Multiple definitions for parameter BUILDDIR (-b)!"
-      else
-        BUILDDIR="$1"
-      fi
-      SKIP=true
-      ;;
-    -s)
-      shift
-      if test -n "$SRCDIR"; then
-        die "ERROR: Multiple definitions for parameter SRCDIR (-s)!"
-      else
-        SRCDIR="$1"
-      fi
-      SKIP=true
-      ;;
-    *)
-      # Treat everything else as args to init-build
-      OTHER_ARGS="$OTHER_ARGS $ARG "
-      ;;
-  esac
-  shift
-done
 
 # Validate input arguments.
 # Build and source directories
 # are required.
 #
 if test -z "$BUILDDIR"; then
-	die "ERROR: Parameter BUILDDIR (-b) is required!"
+	printf "ERROR: Build directory required!" >&2;
+  exit 1
 fi
 
 if test -z "$SRCDIR"; then
-	die "ERROR: Parameter SRCDIR (-s) is required!"
+	printf "ERROR: Source directory required!" >&2;
+  exit 1
 fi
-
-set -- "$OTHER_ARGS"
 
 rm -rf ${BUILDDIR}
 mkdir -p ${BUILDDIR}

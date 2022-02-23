@@ -2,109 +2,69 @@
 
 set -e
 
-SCRIPT_NAME=$(realpath $0)
-SCRIPT_DIR=$(dirname ${SCRIPT_NAME})
-
-. "${SCRIPT_DIR}/utils.sh"
 . "$(pwd)/.config"
 
 if test "x$(pwd)" != "x/workspace"; then
-  exec docker/enter_container.sh -i kernel -w $(pwd) scripts/build_guest_linux.sh $@
+  exec docker/enter_container.sh kernel $(pwd) scripts/build_guest_linux.sh $@
 fi
 
-BASEDIR=""
-SRCDIR=""
-ACTION=""
-OTHER_ARGS=""
+ACTION="$1"
 
-SKIP=false
-# Parse arguments
-for ARG in "$@"; do
-  if $SKIP; then
-    SKIP=false && continue
-  fi
-  case "$ARG" in
-    -b)
-      shift
-      if test -n "$BASEDIR"; then
-        die "ERROR: Multiple definitions for parameter BASEDIR (-b)!"
-      else
-        BUILDDIR="$1"
-      fi
-      SKIP=true
-      ;;
-    -s)
-      shift
-      if test -n "$SRCDIR"; then
-        die "ERROR: Multiple definitions for parameter SRCDIR (-s)!"
-      else
-        SRCDIR="$1"
-      fi
-      SKIP=true
-      ;;
-    -a)
-      shift
-      if test -n "$ACTION"; then
-        die "ERROR: Multiple definitions for parameter ACTION (-a)!"
-      else
-        ACTION="$1"
-      fi
-      SKIP=true
-      ;;
-    *)
-      # Treat everything else as args to init-build
-      OTHER_ARGS="$OTHER_ARGS $ARG "
-      ;;
-  esac
-  shift
-done
-
-# Validate input arguments.
-# All params are optional.
-#
 if test -z "$BASEDIR"; then
   BASEDIR=/workspace/tii_sel4_build/linux-images
 fi
 
-if test -z "$SRCDIR"; then
-  SRCDIR=/workspace/projects/torvalds/linux
+if test -z "$KERNELSRCDIR"; then
+  KERNELSRCDIR=/workspace/projects/torvalds/linux
 fi
 
 if test -z "$ACTION"; then
 	ACTION=build
 fi
 
-BUILDDIR=${BASEDIR}/linux-build-${PLATFORM}
+BUILDDIR=${BASEDIR}/${PLATFORM}/linux-build
 PLATDIR=${BASEDIR}/${PLATFORM}
-CONFIG=${PLATDIR}/${PLATFORM}-linux-config
+KERN_CONFIG=${PLATDIR}/linux-config
+KERN_CONFIG_DEST=${BUILDDIR}/.config
 
-cd ${SRCDIR}
+cd ${KERNELSRCDIR}
 export ARCH=arm64
 export CROSS_COMPILE
 
 case "$ACTION" in
   olddefconfig)
     mkdir -p ${BUILDDIR}
-    cp ${CONFIG} ${BUILDDIR}/.config
-    make O=${BUILDDIR} olddefconfig ${OTHER_ARGS}
+    cp -v ${KERN_CONFIG} ${KERN_CONFIG_DEST}
+    make O=${BUILDDIR} olddefconfig
     ;;
   menuconfig)
-    make O=${BUILDDIR} menuconfig ${OTHER_ARGS}
+    make O=${BUILDDIR} menuconfig
+    ;;
+  clean)
+    make O=${BUILDDIR} clean
+    ;;
+  distclean)
+    make O=${BUILDDIR} distclean
     ;;
   mrproper)
-    make O=${BUILDDIR} mrproper ${OTHER_ARGS}
+    make O=${BUILDDIR} mrproper
+    ;;
+  dtb)
+    make O=${BUILDDIR} bcm2711-rpi-4-b.dtb
     ;;
   build)
-    make O=${BUILDDIR} -j$(nproc) ${OTHER_ARGS}
+    make O=${BUILDDIR} -j$(nproc)
     ;;
   install)
-    make O=${BUILDDIR} savedefconfig ${OTHER_ARGS}
-    cp ${BUILDDIR}/defconfig ${CONFIG}
-    cp ${BUILDDIR}/arch/arm64/boot/Image ${PLATDIR}/${PLATFORM}-linux-image
-    cp ${BUILDDIR}/Module.symvers ${PLATDIR}/${PLATFORM}-linux-symvers
+    make O=${BUILDDIR} savedefconfig
+    cp -v ${BUILDDIR}/defconfig ${KERN_CONFIG}
+    cp -v ${BUILDDIR}/arch/arm64/boot/Image ${PLATDIR}/linux-image
+    cp -v ${BUILDDIR}/arch/arm64/boot/dts/broadcom/bcm2711-rpi-4-b.dtb \
+        ${PLATDIR}/bcm2711-rpi-4-b.dtb
+    cp -v ${BUILDDIR}/Module.symvers ${PLATDIR}/linux-symvers
     TMPDIR=$(mktemp -d)
-    make O=${BUILDDIR} INSTALL_MOD_PATH=${TMPDIR} modules_install ${OTHER_ARGS}
-    rsync -avP --delete ${TMPDIR}/ ${PLATDIR}/${PLATFORM}-linux-modules
+    make O=${BUILDDIR} INSTALL_MOD_PATH=${TMPDIR} modules_install
+    rsync -avP --delete --no-links ${TMPDIR}/ ${PLATDIR}/linux-modules
     rm -rf ${TMPDIR}
     ;;
 esac

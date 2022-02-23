@@ -1,8 +1,4 @@
-IMAGE=sel4
 WORKSPACEDIR=$(shell pwd)
-BASEDIR=/workspace/tii_sel4_build/linux-images
-KERNELSRCDIR=/workspace/projects/torvalds/linux
-BRSRCDIR=/workspace/projects/buildroot
 ACTION=
 
 all: vm_minimal vm_multi vm_cross_connector .config
@@ -11,6 +7,9 @@ rpi4_defconfig:
 	@echo 'PLATFORM=rpi4' > .config
 	@echo 'NUM_NODES=4' >> .config
 	@echo 'CROSS_COMPILE=aarch64-linux-gnu-' >> .config
+	@echo 'BASEDIR=/workspace/tii_sel4_build/linux-images' >> .config
+	@echo 'KERNELSRCDIR=/workspace/projects/torvalds/linux' >> .config
+	@echo 'BRSRCDIR=/workspace/projects/buildroot' >> .config
 
 build_camkes: .config
 	@scripts/build_camkes.sh
@@ -32,16 +31,44 @@ vm_cross_connector:
 sel4test:
 	make build_sel4test
 
-guest_linux: .config
-	@scripts/build_guest_linux.sh -b $(BASEDIR) -s $(KERNELSRCDIR) -a $(ACTION)
-
 guest_rootfs: .config
-	@scripts/build_guest_rootfs.sh -b $(BASEDIR) -s $(BRSRCDIR) -a $(ACTION)
+	@scripts/build_guest_rootfs.sh $(ACTION)
 
-docker:
-	@scripts/build_docker.sh -i $(IMAGE) -w $(WORKSPACEDIR)
+guest_linux: .config
+	@scripts/build_guest_linux.sh $(ACTION)
 
-shell:
-	@docker/enter_container.sh -i $(IMAGE) -w $(WORKSPACEDIR)
+docker: docker_sel4
+
+docker_sel4:
+	@scripts/build_docker.sh sel4 $(WORKSPACEDIR)
+
+docker_yocto:
+	@scripts/build_docker.sh yocto $(WORKSPACEDIR)
+
+docker_br:
+	@scripts/build_docker.sh buildroot $(WORKSPACEDIR)
+
+docker_uboot:
+	@scripts/build_docker.sh uboot $(WORKSPACEDIR)
+
+docker_kernel:
+	@scripts/build_docker.sh kernel $(WORKSPACEDIR)
+
+shell: shell_sel4
+
+shell_sel4:
+	@docker/enter_container.sh sel4 $(WORKSPACEDIR)
+
+shell_yocto:
+	@docker/enter_container.sh yocto $(WORKSPACEDIR)
+
+shell_br:
+	@docker/enter_container.sh buildroot $(WORKSPACEDIR)
+
+shell_uboot:
+	@docker/enter_container.sh uboot $(WORKSPACEDIR)
+
+shell_kernel:
+	@docker/enter_container.sh kernel $(WORKSPACEDIR)
 
 .PHONY: docker shell
