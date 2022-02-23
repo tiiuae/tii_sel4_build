@@ -1,0 +1,43 @@
+---
+# Copyright 2022, Technology Innovation Institute
+
+name: Build vm_minimal
+on: [push,workflow_dispatch]
+
+jobs:
+  build_images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code for using local actions
+        uses: actions/checkout@v2
+
+      - name: Checkout code
+        uses: ./.github/actions/repo-manifest-checkout
+        with:
+          MANIFEST_URL: 'git@github.com:tiiuae/tii_sel4_manifest.git'
+          MANIFEST_REVISION: 'tii/development'
+          MANIFEST: 'default.xml'
+          SSH_KEY: ${{ secrets.CI_SSH_KEY }}
+          SSH_KEYSCAN_URL: 'github.com'
+          WORKSPACE: './workspace'
+
+      - name: Build vm_minimal
+        uses: ./.github/actions/vm-image
+        with:
+          CONFIG: 'rpi4_defconfig'
+          TARGET: 'vm_minimal'
+          WORKSPACE: './workspace'
+
+      - name: Build vm_multi
+        uses: ./.github/actions/vm-image
+        with:
+          CONFIG: 'rpi4_defconfig'
+          TARGET: 'vm_multi'
+          WORKSPACE: './workspace'
+
+      - name: Build sel4test
+        uses: ./.github/actions/vm-image
+        with:
+          CONFIG: 'rpi4_defconfig'
+          TARGET: 'sel4test'
+          WORKSPACE: './workspace'
