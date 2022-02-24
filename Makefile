@@ -10,6 +10,7 @@ rpi4_defconfig:
 	@echo 'BASEDIR=/workspace/tii_sel4_build/linux-images' >> .config
 	@echo 'KERNELSRCDIR=/workspace/projects/torvalds/linux' >> .config
 	@echo 'BRSRCDIR=/workspace/projects/buildroot' >> .config
+	@echo 'UBOOTSRCDIR=/workspace/projects/uboot' >> .config
 
 build_camkes: .config
 	@scripts/build_camkes.sh
@@ -36,6 +37,9 @@ guest_rootfs: .config
 
 guest_linux: .config
 	@scripts/build_guest_linux.sh $(ACTION)
+
+uboot: .config
+	@scripts/build_uboot.sh $(ACTION)
 
 docker: docker_sel4
 
