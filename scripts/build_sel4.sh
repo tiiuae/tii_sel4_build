@@ -17,6 +17,8 @@ if [ -z "${container}" ] && [ ! -f /.dockerenv ]; then
   exec docker/enter_container.sh "$(pwd)" scripts/build_sel4.sh $@
 fi
 
+set -x
+
 BUILDDIR=$1
 shift
 

@@ -60,9 +60,8 @@ Host *
 EOF
 fi
 
-INPUT_REPO_INIT_OPTS=${INPUT_REPO_INIT_OPTS:-"-c --no-tags --no-clone-bundle
---depth 1"}
-INPUT_REPO_SYNC_OPTS=${INPUT_REPO_SYNC_OPTS:-"-c --no-tags --no-clone-bundle --fail-fast -j$(nproc --all 2>/dev/null || echo 1)"}
+#INPUT_REPO_INIT_OPTS=${INPUT_REPO_INIT_OPTS:-"-c --no-tags --no-clone-bundle --depth 1"}
+#INPUT_REPO_SYNC_OPTS=${INPUT_REPO_SYNC_OPTS:-"--no-tags --no-clone-bundle --fail-fast -j$(nproc --all 2>/dev/null || echo 1)"}
 
 # Ensure name, email and colors are set
 git config user.name &> /dev/null || \
@@ -83,6 +82,11 @@ repo init ${INPUT_REPO_INIT_OPTS} \
 
 # shellcheck disable=SC2086
 repo sync ${INPUT_REPO_SYNC_OPTS}
+
+# FIXME: for testing
+{
+  cd tii_sel4_build && git checkout wip/ci-stuff
+}
 
 echo "::endgroup::"
 echo "::set-output name=manifest-xml::$(repo manifest -r | escape_newlines)"
