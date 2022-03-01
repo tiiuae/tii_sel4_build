@@ -2,7 +2,8 @@
 
 set -e
 
-. `pwd`/.config
+# shellcheck disable=SC1091
+. "$(pwd)/.config"
 
 # Detect whether should enter container:
 #   docker     -> '/.dockerenv' file exists
@@ -21,14 +22,16 @@ shift
 
 SRCDIR=$1
 
-rm -rf ${BUILDDIR}
-mkdir -p ${BUILDDIR}
+rm -rf "${BUILDDIR}"
+mkdir -p "${BUILDDIR}"
 
 ln -rs tools/seL4/cmake-tool/init-build.sh "${BUILDDIR}"
 ln -rs "${SRCDIR}/easy-settings.cmake" "${BUILDDIR}"
 
-cd ${BUILDDIR}
-./init-build.sh -B . -DAARCH64=1 -DPLATFORM=${PLATFORM} -DCROSS_COMPILER_PREFIX=${CROSS_COMPILE} $@
+cd "${BUILDDIR}" || exit 2
+
+# shellcheck disable=SC2068
+./init-build.sh -B . -DAARCH64=1 -DPLATFORM="${PLATFORM}" -DCROSS_COMPILER_PREFIX="${CROSS_COMPILE}" $@
 ninja
 
 echo "Here are your binaries in ${BUILDDIR}/images: "
