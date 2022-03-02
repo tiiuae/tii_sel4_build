@@ -1,8 +1,13 @@
 ---
 # Copyright 2022, Technology Innovation Institute
 
-name: Build vm_minimal
-on: [push,workflow_dispatch]
+name: Build vm images
+on:
+  workflow_call:
+    secrets:
+      ssh-key:
+        description: 'ssh key for checking out source code'
+        required: true
 
 jobs:
   build_images:
@@ -17,7 +22,7 @@ jobs:
           MANIFEST_URL: 'git@github.com:tiiuae/tii_sel4_manifest.git'
           MANIFEST_REVISION: 'tii/development'
           MANIFEST: 'default.xml'
-          SSH_KEY: ${{ secrets.CI_SSH_KEY }}
+          SSH_KEY: ${{ secrets.ssh-key }}
           SSH_KEYSCAN_URL: 'github.com'
           WORKSPACE: './workspace'
 

@@ -1,0 +1,13 @@
+---
+# Copyright 2022, Technology Innovation Institute
+
+name: Nightly build
+on:
+  schedule:
+    - cron: '0 3 * * 1-5'
+
+jobs:
+  build-vm-images:
+    uses: ./.github/workflows/build-vm-images.yml
+    secrets: ${{ secrets.CI_SSH_KEY }}
+

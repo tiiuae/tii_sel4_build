@@ -1,0 +1,14 @@
+---
+# Copyright 2022, Technology Innovation Institute
+
+name: Master verification
+on:
+  push:
+    branches:
+      - tii/development
+
+jobs:
+  build-vm-images:
+    uses: ./.github/workflows/build-vm-images.yml
+    secrets: ${{ secrets.CI_SSH_KEY }}
+

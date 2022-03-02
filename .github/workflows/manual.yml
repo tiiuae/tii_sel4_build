@@ -1,0 +1,11 @@
+---
+# Copyright 2022, Technology Innovation Institute
+
+name: Manual workflow run
+on: [workflow_dispatch]
+
+jobs:
+  build-vm-images:
+    uses: ./.github/workflows/build-vm-images.yml
+    secrets: ${{ secrets.CI_SSH_KEY }}
+
