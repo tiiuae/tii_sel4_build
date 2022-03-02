@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - tii/development
+      - wip/ci-stuff
 
 jobs:
   build-vm-images:
