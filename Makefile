@@ -1,16 +1,44 @@
 WORKSPACEDIR=$(shell pwd)
 ACTION=
 
+WORKSPACE_PATH := /workspace/
+PLATFORM := rpi4
+PLAT_BASEDIR := tii_sel4_build/images/$(PLATFORM)
+
+BR_CONFIG := $(PLAT_BASEDIR)/buildroot-config
+KERNEL_CONFIG := $(PLAT_BASEDIR)/linux-config
+UBOOT_CONFIG := $(PLAT_BASEDIR)/uboot-config
+
+BR_BUILDDIR := $(PLAT_BASEDIR)/br-build
+KERNEL_BUILDDIR := $(PLAT_BASEDIR)/linux-build
+UBOOT_BUILDDIR := $(PLAT_BASEDIR)/uboot-build
+
+BR_SRCDIR := projects/buildroot
+KERNEL_SRCDIR := projects/torvalds/linux
+UBOOT_SRCDIR := projects/uboot
+
+KERNEL_VER := $(shell make -C $(KERNEL_SRCDIR) -s kernelversion)
+DEST_IMGDIR := projects/camkes-vm-images/$(PLATFORM)
+
 all: vm_minimal vm_multi vm_cross_connector .config
 
 rpi4_defconfig:
 	@echo 'PLATFORM=rpi4' > .config
 	@echo 'NUM_NODES=4' >> .config
 	@echo 'CROSS_COMPILE=aarch64-linux-gnu-' >> .config
-	@echo 'BASEDIR=/workspace/tii_sel4_build/linux-images' >> .config
-	@echo 'KERNELSRCDIR=/workspace/projects/torvalds/linux' >> .config
-	@echo 'BRSRCDIR=/workspace/projects/buildroot' >> .config
-	@echo 'UBOOTSRCDIR=/workspace/projects/uboot' >> .config
+	@echo 'ARCH=arm64' >> .config
+	@echo 'WORKSPACE_PATH=$(WORKSPACE_PATH)' >> .config
+	@echo 'BR_CONFIG=$(addprefix $(WORKSPACE_PATH), $(BR_CONFIG))' >> .config
+	@echo 'BR_BUILDDIR=$(addprefix $(WORKSPACE_PATH), $(BR_BUILDDIR))' >> .config
+	@echo 'BR_SRCDIR=$(addprefix $(WORKSPACE_PATH), $(BR_SRCDIR))' >> .config
+	@echo 'LINUX_CONFIG=$(addprefix $(WORKSPACE_PATH), $(KERNEL_CONFIG))' >> .config
+	@echo 'LINUX_BUILDDIR=$(addprefix $(WORKSPACE_PATH), $(KERNEL_BUILDDIR))' >> .config
+	@echo 'LINUX_SRCDIR=$(addprefix $(WORKSPACE_PATH), $(KERNEL_SRCDIR))' >> .config
+	@echo 'UBOOT_CONFIG=$(addprefix $(WORKSPACE_PATH), $(UBOOT_CONFIG))' >> .config
+	@echo 'UBOOT_BUILDDIR=$(addprefix $(WORKSPACE_PATH), $(UBOOT_BUILDDIR))' >> .config
+	@echo 'UBOOT_SRCDIR=$(addprefix $(WORKSPACE_PATH), $(UBOOT_SRCDIR))' >> .config
+	@echo 'IMGDIR=$(addprefix $(WORKSPACE_PATH), $(DEST_IMGDIR))' >> .config
+	@echo 'KERNELVER=$(KERNEL_VER)' >> .config
 
 build_camkes: .config
 	@scripts/build_camkes.sh
@@ -31,6 +59,22 @@ vm_cross_connector:
 
 sel4test:
 	make build_sel4test
+
+build_guest_rootfs: .config
+	@scripts/build_guest_rootfs.sh olddefconfig
+	@scripts/build_guest_rootfs.sh build
+	@scripts/build_guest_rootfs.sh install
+
+build_guest_linux: .config
+	@scripts/build_guest_linux.sh olddefconfig
+	@scripts/build_guest_linux.sh build
+	@scripts/build_guest_linux.sh dtbs
+	@scripts/build_guest_linux.sh install
+
+build_uboot: .config
+	@scripts/build_uboot.sh olddefconfig
+	@scripts/build_uboot.sh build
+	@scripts/build_uboot.sh install
 
 guest_rootfs: .config
 	@scripts/build_guest_rootfs.sh $(ACTION)

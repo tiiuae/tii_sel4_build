@@ -8,50 +8,61 @@ if test "x$(pwd)" != "x/workspace"; then
   exec docker/enter_container.sh uboot $(pwd) scripts/build_uboot.sh $@
 fi
 
-ACTION="$1"
-
-if test -z "$BASEDIR"; then
-  BASEDIR=/workspace/tii_sel4_build/linux-images
+if test -n "$1"; then
+  COMMAND="$1"
+else
+  printf "ERROR: COMMAND not defined!" >&2
+  exit 1
 fi
 
-if test -z "$UBOOTSRCDIR"; then
-  UBOOTSRCDIR=/workspace/projects/uboot
+if test -z "$UBOOT_CONFIG"; then
+  printf "ERROR: UBOOT_CONFIG not defined!" >&2
+  exit 1
 fi
 
-if test -z "$ACTION"; then
-	ACTION=build
+if test -z "$UBOOT_BUILDDIR"; then
+  printf "ERROR: UBOOT_BUILDDIR not defined!" >&2
+  exit 1
 fi
 
-BUILDDIR=${BASEDIR}/${PLATFORM}/uboot-build
-PLATDIR=${BASEDIR}/${PLATFORM}
-UBOOT_CONFIG=${PLATDIR}/uboot-config
-UBOOT_CONFIG_DEST=${BUILDDIR}/.config
+if test -z "$UBOOT_SRCDIR"; then
+  printf "ERROR: UBOOT_SRCDIR not defined!" >&2
+  exit 1
+fi
 
-cd ${UBOOTSRCDIR}
-#export ARCH=arm64
-export CROSS_COMPILE
+if test -z "$IMGDIR"; then
+  printf "ERROR: IMGDIR not defined!" >&2
+  exit 1
+fi
 
-case "$ACTION" in
+UBOOT_CONFIG_NAME=$(basename ${UBOOT_CONFIG})
+
+cd ${UBOOT_SRCDIR}
+export ARCH=arm
+export CROSS_COMPILE=${CROSS_COMPILE}
+
+case "$COMMAND" in
   olddefconfig)
-    mkdir -p ${BUILDDIR}
-    cp -v ${UBOOT_CONFIG} ${UBOOT_CONFIG_DEST}
-    make O=${BUILDDIR} olddefconfig
+    mkdir -p ${UBOOT_BUILDDIR}
+    cp -v ${UBOOT_CONFIG} ${UBOOT_BUILDDIR}/.config
+    make O=${UBOOT_BUILDDIR} olddefconfig
     ;;
   menuconfig)
-    make O=${BUILDDIR} menuconfig
+    make O=${UBOOT_BUILDDIR} menuconfig
     ;;
   clean)
-    make O=${BUILDDIR} clean
+    make O=${UBOOT_BUILDDIR} clean
     ;;
   distclean)
-    make O=${BUILDDIR} distclean
+    make O=${UBOOT_BUILDDIR} distclean
     ;;
   build)
-    make O=${BUILDDIR} -j$(nproc)
+    make O=${UBOOT_BUILDDIR} -j$(nproc)
     ;;
   install)
-    make O=${BUILDDIR} savedefconfig
-    cp -v ${BUILDDIR}/defconfig ${UBOOT_CONFIG}
-    cp -v ${BUILDDIR}/u-boot.bin ${PLATDIR}/u-boot.bin
+    make O=${UBOOT_BUILDDIR} savedefconfig
+    cp -v ${UBOOT_BUILDDIR}/defconfig ${UBOOT_CONFIG}
+    cp -v ${UBOOT_BUILDDIR}/defconfig ${IMGDIR}/uboot-config
+    cp -v ${UBOOT_BUILDDIR}/u-boot.bin ${IMGDIR}/u-boot.bin
     ;;
 esac

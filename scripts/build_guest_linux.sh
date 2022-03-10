@@ -8,63 +8,73 @@ if test "x$(pwd)" != "x/workspace"; then
   exec docker/enter_container.sh kernel $(pwd) scripts/build_guest_linux.sh $@
 fi
 
-ACTION="$1"
-
-if test -z "$BASEDIR"; then
-  BASEDIR=/workspace/tii_sel4_build/linux-images
+if test -n "$1"; then
+  COMMAND="$1"
+else
+  printf "ERROR: COMMAND not defined!" >&2
+  exit 1
 fi
 
-if test -z "$KERNELSRCDIR"; then
-  KERNELSRCDIR=/workspace/projects/torvalds/linux
+if test -z "$LINUX_CONFIG"; then
+  printf "ERROR: LINUX_CONFIG not defined!" >&2
+  exit 1
 fi
 
-if test -z "$ACTION"; then
-	ACTION=build
+if test -z "$LINUX_BUILDDIR"; then
+  printf "ERROR: LINUX_BUILDDIR not defined!" >&2
+  exit 1
 fi
 
-BUILDDIR=${BASEDIR}/${PLATFORM}/linux-build
-PLATDIR=${BASEDIR}/${PLATFORM}
-KERN_CONFIG=${PLATDIR}/linux-config
-KERN_CONFIG_DEST=${BUILDDIR}/.config
+if test -z "$LINUX_SRCDIR"; then
+  printf "ERROR: LINUX_SRCDIR not defined!" >&2
+  exit 1
+fi
 
-cd ${KERNELSRCDIR}
-export ARCH=arm64
-export CROSS_COMPILE
+if test -z "$IMGDIR"; then
+  printf "ERROR: IMGDIR not defined!" >&2
+  exit 1
+fi
 
-case "$ACTION" in
+LINUX_CONFIG_NAME=$(basename ${LINUX_CONFIG})
+
+cd ${LINUX_SRCDIR}
+export ARCH=${ARCH}
+export CROSS_COMPILE=${CROSS_COMPILE}
+
+case "$COMMAND" in
   olddefconfig)
-    mkdir -p ${BUILDDIR}
-    cp -v ${KERN_CONFIG} ${KERN_CONFIG_DEST}
-    make O=${BUILDDIR} olddefconfig
+    mkdir -p ${LINUX_BUILDDIR}
+    cp -v ${LINUX_CONFIG} ${LINUX_BUILDDIR}/.config
+    make O=${LINUX_BUILDDIR} olddefconfig
     ;;
   menuconfig)
-    make O=${BUILDDIR} menuconfig
+    make O=${LINUX_BUILDDIR} menuconfig
     ;;
   clean)
-    make O=${BUILDDIR} clean
+    make O=${LINUX_BUILDDIR} clean
     ;;
   distclean)
-    make O=${BUILDDIR} distclean
+    make O=${LINUX_BUILDDIR} distclean
     ;;
   mrproper)
-    make O=${BUILDDIR} mrproper
+    make O=${LINUX_BUILDDIR} mrproper
     ;;
-  dtb)
-    make O=${BUILDDIR} bcm2711-rpi-4-b.dtb
+  dtbs)
+    make O=${LINUX_BUILDDIR} dtbs
     ;;
   build)
-    make O=${BUILDDIR} -j$(nproc)
+    make O=${LINUX_BUILDDIR} -j$(nproc)
     ;;
   install)
-    make O=${BUILDDIR} savedefconfig
-    cp -v ${BUILDDIR}/defconfig ${KERN_CONFIG}
-    cp -v ${BUILDDIR}/arch/arm64/boot/Image ${PLATDIR}/linux-image
-    cp -v ${BUILDDIR}/arch/arm64/boot/dts/broadcom/bcm2711-rpi-4-b.dtb \
-        ${PLATDIR}/bcm2711-rpi-4-b.dtb
-    cp -v ${BUILDDIR}/Module.symvers ${PLATDIR}/linux-symvers
+    make O=${LINUX_BUILDDIR} savedefconfig
+    cp -v ${LINUX_BUILDDIR}/defconfig ${LINUX_CONFIG}
+    cp -v ${LINUX_BUILDDIR}/defconfig ${IMGDIR}/${LINUX_CONFIG_NAME}
+    cp -v ${LINUX_BUILDDIR}/arch/arm64/boot/Image ${IMGDIR}/linux
+    cp -v ${LINUX_BUILDDIR}/arch/arm64/boot/dts/broadcom/bcm2711-rpi-4-b.dtb ${IMGDIR}/linux.dtb
+    cp -v ${LINUX_BUILDDIR}/Module.symvers ${IMGDIR}/linux-symvers
     TMPDIR=$(mktemp -d)
-    make O=${BUILDDIR} INSTALL_MOD_PATH=${TMPDIR} modules_install
-    rsync -avP --delete --no-links ${TMPDIR}/ ${PLATDIR}/linux-modules
+    make O=${LINUX_BUILDDIR} INSTALL_MOD_PATH=${TMPDIR} modules_install
+    rsync -avP --delete --no-links ${TMPDIR}/ ${IMGDIR}/linux-modules
     rm -rf ${TMPDIR}
     ;;
 esac
