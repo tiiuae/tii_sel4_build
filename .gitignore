@@ -1,4 +1,1 @@
-linux-images/*build*/
-linux-images/*/*build*/
-linux-images/*/images/*
-linux-images/*/linux-modules/*
+images/*/*build*/
