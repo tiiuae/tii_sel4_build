@@ -68,7 +68,6 @@ build_guest_rootfs: .config
 build_guest_linux: .config
 	@scripts/build_guest_linux.sh olddefconfig
 	@scripts/build_guest_linux.sh build
-	@scripts/build_guest_linux.sh dtbs
 	@scripts/build_guest_linux.sh install
 
 build_uboot: .config
