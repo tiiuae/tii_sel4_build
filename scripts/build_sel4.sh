@@ -12,7 +12,6 @@ BUILDDIR="$1"
 shift
 SRCDIR="$1"
 shift
-OTHER_ARGS=""
 
 # Validate input arguments.
 # Build and source directories
@@ -41,4 +40,5 @@ echo "----------------------------------------------"
 echo "----------------------------------------------"
 echo "                                              "
 echo "Here are your binaries in ${BUILDDIR}/images: "
+echo "                                              "
 ls -la ./images

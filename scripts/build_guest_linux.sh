@@ -4,6 +4,8 @@ set -e
 
 . "$(pwd)/.config"
 
+#if $(cat /proc/1/sched | head -n 1 | grep -q 'init\|systemd'); then echo "Not in container"; fi
+
 if test "x$(pwd)" != "x/workspace"; then
   exec docker/enter_container.sh kernel $(pwd) scripts/build_guest_linux.sh $@
 fi

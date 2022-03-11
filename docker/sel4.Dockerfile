@@ -74,7 +74,7 @@ RUN pip3 install \
 RUN \
     git clone https://github.com/seL4/capdl.git /home/build/capdl && \
     cd /home/build/capdl/capDL-tool && \
-    stack build --only-dependencies && \
+    make sandbox && \
     cd /home/build && \
     rm -rf /home/build/capdl
 
