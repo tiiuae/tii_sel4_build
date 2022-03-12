@@ -6,6 +6,7 @@ PLATFORM := rpi4
 PLAT_BASEDIR := tii_sel4_build/images/$(PLATFORM)
 
 BR_CONFIG := $(PLAT_BASEDIR)/buildroot-config
+BR_SDK_CONFIG := $(PLAT_BASEDIR)/buildroot-sdk-config
 KERNEL_CONFIG := $(PLAT_BASEDIR)/linux-config
 UBOOT_CONFIG := $(PLAT_BASEDIR)/uboot-config
 
@@ -29,6 +30,7 @@ rpi4_defconfig:
 	@echo 'ARCH=arm64' >> .config
 	@echo 'WORKSPACE_PATH=$(WORKSPACE_PATH)' >> .config
 	@echo 'BR_CONFIG=$(addprefix $(WORKSPACE_PATH), $(BR_CONFIG))' >> .config
+	@echo 'BR_SDK_CONFIG=$(addprefix $(WORKSPACE_PATH), $(BR_SDK_CONFIG))' >> .config
 	@echo 'BR_BUILDDIR=$(addprefix $(WORKSPACE_PATH), $(BR_BUILDDIR))' >> .config
 	@echo 'BR_SRCDIR=$(addprefix $(WORKSPACE_PATH), $(BR_SRCDIR))' >> .config
 	@echo 'LINUX_CONFIG=$(addprefix $(WORKSPACE_PATH), $(KERNEL_CONFIG))' >> .config

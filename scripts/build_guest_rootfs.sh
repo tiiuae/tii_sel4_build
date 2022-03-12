@@ -40,7 +40,6 @@ if test -z "$KERNELVER"; then
   exit 1
 fi
 
-SDKPREFIX=aarch64-buildroot-linux-uclibc-sdk
 BR_CONFIG_NAME=$(basename ${BR_CONFIG})
 
 cd ${BR_SRCDIR}
@@ -76,6 +75,9 @@ case "$COMMAND" in
     rsync -avP --delete ${BR_BUILDDIR}/images/ ${IMGDIR}/br-images
     ;;
   sdk)
-    make O=${BR_BUILDDIR} BR2_SDK_PREFIX=${SDKPREFIX} sdk
+    mkdir -p ${BR_BUILDDIR}
+    cp -v ${BR_SDK_CONFIG} ${BR_BUILDDIR}/${BR_CONFIG_NAME}
+    make O=${BR_BUILDDIR} BR2_DEFCONFIG=${BR_BUILDDIR}/${BR_CONFIG_NAME} defconfig
+    make O=${BR_BUILDDIR} sdk
     ;;
 esac
