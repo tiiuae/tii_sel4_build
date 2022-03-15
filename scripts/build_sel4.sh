@@ -5,7 +5,7 @@ set -e
 . "$(pwd)/.config"
 
 if test "x$(pwd)" != "x/workspace"; then
-  exec docker/enter_container.sh sel4 $(pwd) scripts/build_sel4.sh $@
+  exec docker/enter_container.sh -i sel4 -d $(pwd) scripts/build_sel4.sh $@
 fi
 
 BUILDDIR="$1"
