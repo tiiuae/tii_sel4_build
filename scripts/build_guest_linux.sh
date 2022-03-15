@@ -49,6 +49,13 @@ case "$COMMAND" in
     cp -v ${LINUX_CONFIG} ${LINUX_BUILDDIR}/.config
     make O=${LINUX_BUILDDIR} olddefconfig
     ;;
+  defconfig)
+    mkdir -p ${LINUX_BUILDDIR}
+    make O=${LINUX_BUILDDIR} defconfig
+    ;;
+  savedefconfig)
+    make O=${LINUX_BUILDDIR} savedefconfig
+    ;;
   menuconfig)
     make O=${LINUX_BUILDDIR} menuconfig
     ;;
@@ -74,7 +81,8 @@ case "$COMMAND" in
     cp -v ${LINUX_BUILDDIR}/arch/arm64/boot/Image ${IMGDIR}/linux
     cp -v ${LINUX_BUILDDIR}/arch/arm64/boot/dts/broadcom/bcm2711-rpi-4-b.dtb ${IMGDIR}/linux-dtb
     cp -v ${LINUX_BUILDDIR}/Module.symvers ${IMGDIR}/linux-symvers
-    ${LINUX_BUILDDIR}/scripts/dtc/dtc -I dtb -O dts -o ${IMGDIR}/linux-dts ${IMGDIR}/linux-dtb
+    cp -v ${LINUX_BUILDDIR}/System.map ${IMGDIR}/linux-system-map
+    ${LINUX_BUILDDIR}/scripts/dtc/dtc -I dtb -O dts -o ${IMGDIR}/linux.dts ${IMGDIR}/linux-dtb
     TMPDIR=$(mktemp -d)
     make O=${LINUX_BUILDDIR} INSTALL_MOD_PATH=${TMPDIR} modules_install
     rsync -avP --delete --no-links ${TMPDIR}/ ${IMGDIR}/linux-modules

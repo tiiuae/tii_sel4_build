@@ -10,9 +10,9 @@ BR_SDK_CONFIG := $(PLAT_BASEDIR)/buildroot-sdk-config
 KERNEL_CONFIG := $(PLAT_BASEDIR)/linux-config
 UBOOT_CONFIG := $(PLAT_BASEDIR)/uboot-config
 
-BR_BUILDDIR := $(PLAT_BASEDIR)/br-build
-KERNEL_BUILDDIR := $(PLAT_BASEDIR)/linux-build
-UBOOT_BUILDDIR := $(PLAT_BASEDIR)/uboot-build
+BR_BUILDDIR := br-build
+KERNEL_BUILDDIR := linux-build
+UBOOT_BUILDDIR := uboot-build
 
 BR_SRCDIR := projects/buildroot
 KERNEL_SRCDIR := projects/torvalds/linux

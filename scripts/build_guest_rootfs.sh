@@ -72,6 +72,7 @@ case "$COMMAND" in
     make O=${BR_BUILDDIR} savedefconfig
     cp -v ${BR_BUILDDIR}/${BR_CONFIG_NAME} ${BR_CONFIG}
     cp -v ${BR_BUILDDIR}/${BR_CONFIG_NAME} ${IMGDIR}/${BR_CONFIG_NAME}
+    cp -v ${BR_BUILDDIR}/images/rootfs.cpio.gz ${IMGDIR}/rootfs.cpio.gz
     rsync -avP --delete ${BR_BUILDDIR}/images/ ${IMGDIR}/br-images
     ;;
   sdk)

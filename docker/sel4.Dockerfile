@@ -44,6 +44,7 @@ RUN \
         rsync \
         strace \
         sudo \
+        u-boot-tools \
         unzip \
         vim \
         wget
