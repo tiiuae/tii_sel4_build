@@ -1,4 +1,5 @@
-WORKSPACEDIR=$(shell pwd)
+WSDIR=$(shell pwd)
+IMAGE=
 ACTION=
 
 WORKSPACE_PATH := /workspace/
@@ -86,38 +87,8 @@ guest_linux: .config
 uboot: .config
 	@scripts/build_uboot.sh $(ACTION)
 
-docker: docker_sel4
+docker: .config
+	@scripts/build_docker.sh -i $(IMAGE) -d $(WSDIR)
 
-docker_sel4:
-	@scripts/build_docker.sh sel4 $(WORKSPACEDIR)
-
-docker_yocto:
-	@scripts/build_docker.sh yocto $(WORKSPACEDIR)
-
-docker_br:
-	@scripts/build_docker.sh buildroot $(WORKSPACEDIR)
-
-docker_uboot:
-	@scripts/build_docker.sh uboot $(WORKSPACEDIR)
-
-docker_kernel:
-	@scripts/build_docker.sh kernel $(WORKSPACEDIR)
-
-shell: shell_sel4
-
-shell_sel4:
-	@docker/enter_container.sh sel4 $(WORKSPACEDIR)
-
-shell_yocto:
-	@docker/enter_container.sh yocto $(WORKSPACEDIR)
-
-shell_br:
-	@docker/enter_container.sh buildroot $(WORKSPACEDIR)
-
-shell_uboot:
-	@docker/enter_container.sh uboot $(WORKSPACEDIR)
-
-shell_kernel:
-	@docker/enter_container.sh kernel $(WORKSPACEDIR)
-
-.PHONY: docker shell
+shell: .config
+	@docker/enter_container.sh -i $(IMAGE) -d $(WSDIR)
