@@ -36,20 +36,7 @@ cd "${BUILDDIR}"
 ninja
 
 # Generate U-Boot script
-TEMPFILE=$(mktemp -q)
-IMAGE_START_ADDR=$("${CROSS_COMPILE}objdump" -t ./elfloader/elfloader | grep _text | cut -d' ' -f1)
-IMAGE_START_ADDR="0x"$(echo "$IMAGE_START_ADDR" | sed 's/^0*//')
-IMAGE_NAME=$(basename $(ls ./images/capdl-loader-*))
-
-cat <<- EOF >> "$TEMPFILE"
-setenv capdl_addr ${IMAGE_START_ADDR}
-setenv capdl_image ${IMAGE_NAME}
-tftp \${capdl_addr} \${capdl_image}
-bootelf \${capdl_addr}
-EOF
-
-mkimage -A arm64 -O linux -T script -C none -n "${TEMPFILE}" -d "${TEMPFILE}" ./images/boot.scr.uimg
-rm "${TEMPFILE}"
+./scripts/generate_uboot_bootscript.sh -b "${BUILDDIR}" -t images -s elfloader/elfloader
 
 echo "------------------------------------------------"
 echo "------------------------------------------------"
