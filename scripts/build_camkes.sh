@@ -1,10 +1,28 @@
 #!/bin/sh
 
-SCRIPT_NAME=$(realpath $0)
-SCRIPT_DIR=$(dirname ${SCRIPT_NAME})
+set -e
 
-. "$(pwd)/.config"
+SCRIPT_ABSPATH="$(realpath "$0")"
+SCRIPT_DIR_ABSPATH="$(dirname "${SCRIPT_ABSPATH}")"
+SCRIPT_CWD="$(pwd)"
+SCRIPT_RELPATH="${SCRIPT_ABSPATH#${SCRIPT_CWD}}"
 
-SOURCE_DIR=$(ls -d projects/*/apps/Arm/${CAMKES_VM_APP} | cut -f-2 -d'/')
+CAMKES_APP_ABSPATH=$(ls -d ${ENV_ROOTDIR}/projects/*/apps/Arm/${CAMKES_VM_APP})
+CAMKES_APP_RELPATH="${CAMKES_APP_ABSPATH#"${SCRIPT_CWD}"}"
+CAMKES_APP_DIR_RELPATH="${CAMKES_APP_RELPATH%"${CAMKES_VM_APP}"}"
+CAMKES_APP_BUILD_RELPATH="/${PLATFORM}_${CAMKES_VM_APP}"
 
-exec ${SCRIPT_DIR}/build_sel4.sh ${PLATFORM}_${CAMKES_VM_APP} ${SOURCE_DIR} -DNUM_NODES=${NUM_NODES} -DCAMKES_VM_APP=${CAMKES_VM_APP}
+#SOURCE_DIR=$(ls -d projects/*/apps/Arm/${CAMKES_VM_APP} | cut -f-2 -d'/')
+
+exec \
+    env \
+    CROSS_COMPILE="${CROSS_COMPILE}" \
+    ARCH="${ARCH}" \
+    WORKSPACE_PATH="${WORKSPACE_PATH}" \
+    ENV_ROOTDIR="${ENV_ROOTDIR}" \
+    BUILDDIR=".${CAMKES_APP_BUILD_RELPATH}" \
+    SRCDIR=".${CAMKES_APP_RELPATH}" \
+    PLATFORM="${PLATFORM}" \
+    NUM_NODES="${NUM_NODES}" \
+    CAMKES_VM_APP="${CAMKES_VM_APP}" \
+    "${SCRIPT_DIR_ABSPATH}/build_sel4.sh"

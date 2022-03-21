@@ -1,20 +1,28 @@
 #!/bin/sh
 
-set -e
+set -eE
 
-IMAGE=""
-DIR=""
+DOCKER_ENVFILE=""
+DOCKER_IMAGE=""
+WORKSPACE_DIR=""
 ARGS=""
 
-while [[ $# -gt 0 ]]; do
+
+while [ $# -gt 0 ]; 
+do
   case "$1" in
-    -i)
-      IMAGE="$2"
+    -e|--envfile)
+      DOCKER_ENVFILE="$2"
       shift # past argument
       shift # past value
       ;;
-    -d)
-      DIR="$2"
+    -i|--image)
+      DOCKER_IMAGE="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    -w|--workspacedir)
+      WORKSPACE_DIR="$2"
       shift # past argument
       shift # past value
       ;;
@@ -26,33 +34,45 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate input arguments.
-# Image name is required,
+# Env file is optional,
+# Docker image name is required,
 # for workspace directory
 # default to current working
 # directory if nothing is given.
 #
-case "$IMAGE" in
-  sel4|yocto|buildroot|uboot|kernel)
+case "${DOCKER_IMAGE}" in
+  sel4_builder|yocto_builder|tii_builder)
   ;;
   *)
-    printf "ERROR: Image name required (sel4|yocto|buildroot|uboot|kernel)!\n" >&2;
+    printf "%s: ERROR: Docker image name required (sel4_builder|yocto_builder|tii_builder)!\n" "$0" >&2;
     exit 1
   ;;
 esac
 
-if test -z "$DIR"; then
-  DIR="$(pwd)"
+if test -z "$WORKSPACE_DIR"; then
+  WORKSPACE_DIR="$(pwd)"
 fi
 
-set -- "$ARGS"
+# The printf is a hack for getting
+# around the problem that parameter
+# expansion encloses the result in single
+# quotes, which wreaks havoc when inserted
+# to Docker run arguments. Printing the
+# the expansion result removes the quotes.
+#
+
+set -- "${ARGS}"
 
 exec \
   docker run \
   --rm -it \
-  -v "${DIR}":/workspace:z \
+  $(printf "%b" "${DOCKER_ENVFILE:+"--env-file ${DOCKER_ENVFILE}"}") \
+  -v "${WORKSPACE_DIR}":/workspace:z \
   -v "${HOME}"/.ssh:/home/build/.ssh:z \
   -v "${HOME}"/.gitconfig:/home/build/.gitconfig:z \
   --add-host host.docker.internal:host-gateway \
-  -h "${IMAGE}"_build \
-  tiiuae/"${IMAGE}"_build:latest \
+  -h "${DOCKER_IMAGE}" \
+  "tiiuae/${DOCKER_IMAGE}:latest" \
   $@
+
+exit 0

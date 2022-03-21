@@ -4,17 +4,23 @@ FROM ubuntu:21.04
 ENV TZ=Europe/Helsinki
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Install basic tools and U-Boot deps
+# Install basic tools, Buildroot, Linux kernel and U-Boot deps
+# https://buildroot.org/downloads/manual/manual.html#requirement
+# screen is required by linux menuconfig
 # https://u-boot.readthedocs.io/en/latest/build/gcc.html#dependencies
 # https://linux-sunxi.org/U-Boot
 #
+
 RUN \
     apt-get -y update && \
     apt-get -y upgrade && \
     apt-get -y install \
+        bash \
         bc \
+        binutils \
         bison \
         build-essential \
+        bzip2 \
         chrpath \
         coccinelle \
         cpio \
@@ -26,12 +32,16 @@ RUN \
         emacs \
         file \
         flex \
+        g++ \
         g++-aarch64-linux-gnu \
         gawk \
+        gcc \
         gcc-aarch64-linux-gnu \
         gdisk \
         git \
+        gzip \
         iputils-ping \
+        libelf-dev \
         libguestfs-tools \
         liblz4-tool \
         libncurses5 \
@@ -43,8 +53,11 @@ RUN \
         lz4 \
         lzma \
         lzma-alone \
+        make \
         nano \
         openssl \
+        patch \
+        perl \
         pkg-config \
         python3 \
         python3-coverage \
@@ -52,15 +65,16 @@ RUN \
         python3-pycryptodome \
         python3-pyelftools \
         python3-pytest \
-        python3-sphinx-rtd-theme \
         python3-sphinxcontrib.apidoc \
+        python3-sphinx-rtd-theme \
         python3-virtualenv \
         rsync \
+        sed \
         socat \
         sudo \
         swig \
+        tar \
         texinfo \
-        unzip \
         unzip \
         vim \
         wget \

@@ -2,8 +2,6 @@
 
 set -e
 
-. "$(pwd)/.config"
-
 BUILDDIR=""
 TARGETDIR=""
 SRCIMGNAME=""
@@ -50,16 +48,16 @@ if test -z "$SRCIMGNAME"; then
 fi
 
 # Setup parameters
-BUILDDIR_PATH="$(realpath "${BUILDDIR}")"
-TARGETDIR_PATH="${BUILDDIR}"/"${TARGETDIR}"
-SRCIMG_PATH="${BUILDDIR}"/"${SRCIMGNAME}"
+BUILDDIR_PATH="$(realpath ${BUILDDIR})"
+TARGETDIR_PATH="${BUILDDIR_PATH}/${TARGETDIR}"
+SRCIMG_PATH="${BUILDDIR_PATH}/${SRCIMGNAME}"
 
 # Generate U-Boot script
 SCRIPTNAME="boot.scr"
 BOOT_SCRIPT_SRC="${TARGETDIR_PATH}/${SCRIPTNAME}"
 BOOT_SCRIPT_TARGET="${TARGETDIR_PATH}/${SCRIPTNAME}.uimg"
-rm "${BOOT_SCRIPT_SRC}"
-rm "${BOOT_SCRIPT_TARGET}"
+rm -f "${BOOT_SCRIPT_SRC}"
+rm -f "${BOOT_SCRIPT_TARGET}"
 touch "${BOOT_SCRIPT_SRC}"
 touch "${BOOT_SCRIPT_TARGET}"
 chmod 644 "${BOOT_SCRIPT_SRC}"
@@ -79,14 +77,14 @@ echo 'Running seL4 bootscript...'
 setenv capdl_image_load_addr ${IMAGE_START_ADDR}
 setenv capdl_load_addr \${kernel_addr_r}
 setenv capdl_image ${IMAGE_NAME}
-setenv boot_tftp 'if tftp \${capdl_load_addr} \${capdl_image}; then bootelf \${capdl_load_addr}; fi'
+setenv boot_tftp 'if tftp \${capdl_load_addr} \${capdl_image}; then go \${capdl_load_addr}; fi'
 setenv bootcmd 'run boot_tftp'
 saveenv
 echo 'Starting boot...'
 boot
 __EOF__
 
-mkimage -A arm64 -T script -C none -d "${BOOT_SCRIPT_SRC}" "${BOOT_SCRIPT_TARGET}"
+mkimage -A "${ARCH}" -T script -C none -d "${BOOT_SCRIPT_SRC}" "${BOOT_SCRIPT_TARGET}"
 
 echo "                                                "
 echo " seL4 bootscript done                           "

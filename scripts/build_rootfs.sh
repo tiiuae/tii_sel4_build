@@ -2,7 +2,7 @@
 
 set -eE
 
-REQUIRED_ENV_VARS="CROSS_COMPILE ARCH WORKSPACE_PATH ENV_ROOTDIR CONFIG BUILDDIR SRCDIR IMGDIR"
+REQUIRED_ENV_VARS="CROSS_COMPILE ARCH WORKSPACE_PATH ENV_ROOTDIR CONFIG SDK_CONFIG BUILDDIR SRCDIR IMGDIR LINUX_KERNEL_VERSION"
 DOCKER_ENVFILE=""
 
 
@@ -132,7 +132,9 @@ mkdir -p "${BUILDDIR_ABSPATH}"
 
 CONFIG_FILE_SRC_ABSPATH="$(realpath "${CONFIG}")"
 CONFIG_FILE_SRC_BASENAME="$(basename "${CONFIG_FILE_SRC_ABSPATH}")"
-CONFIG_FILE_DEST_ABSPATH="$(realpath "${BUILDDIR_ABSPATH}/.config")"
+CONFIG_FILE_DEST_ABSPATH="$(realpath "${BUILDDIR_ABSPATH}/${CONFIG_FILE_SRC_BASENAME}")"
+#SDK_CONFIG_FILE_SRC_ABSPATH="$(realpath "${SDK_CONFIG}")"
+#SDK_CONFIG_FILE_DEST_ABSPATH="$(realpath "${BUILDDIR_ABSPATH}")/$(basename "${SDK_CONFIG_FILE_SRC_ABSPATH}")"
 
 
 call_make()
@@ -140,7 +142,7 @@ call_make()
   make O="${BUILDDIR_ABSPATH}" ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" "$@"
 }
 
-install_config_to_builddir()
+src_config_to_builddir()
 {
   cp -v "${CONFIG_FILE_SRC_ABSPATH}" "${CONFIG_FILE_DEST_ABSPATH}"
 }
@@ -153,21 +155,21 @@ save_config_from_builddir()
 check_install_defconfig()
 {
   if ! test -f "${CONFIG_FILE_DEST_ABSPATH}"; then
-    install_config_to_builddir
-    call_make olddefconfig
+    src_config_to_builddir
+    call_make BR2_DEFCONFIG="${CONFIG_FILE_DEST_ABSPATH}" defconfig
   fi
 }
 
 do_install_defconfig()
 {
-  install_config_to_builddir
-  call_make olddefconfig
+  src_config_to_builddir
+  call_make BR2_DEFCONFIG="${CONFIG_FILE_DEST_ABSPATH}" defconfig
 }
 
 do_build()
 {
   if test -d "${BUILDDIR_ABSPATH}" && 
-     test -f "${BUILDDIR_ABSPATH}/u-boot.bin"; then
+     test -n "$(ls -A "${BUILDDIR_ABSPATH}/images" 2>/dev/null)"; then
 
      log_stdout "Build directory contains built target(s). \n"
      
@@ -198,14 +200,15 @@ do_build()
 
 do_install_imgdir()
 {
-  cp -v "${CONFIG_FILE_DEST_ABSPATH}" "${IMGDIR_ABSPATH}/${CONFIG_FILE_BASENAME}"
-  cp -v "${BUILDDIR_ABSPATH}/u-boot.bin" "${IMGDIR_ABSPATH}/u-boot.bin"
+  cp -v "${CONFIG_FILE_DEST_ABSPATH}" "${IMGDIR_ABSPATH}/${CONFIG_FILE_SRC_BASENAME}"
+  cp -v "${BUILDDIR_ABSPATH}/images/rootfs.cpio.gz" "${IMGDIR_ABSPATH}/rootfs.cpio.gz"
+  rsync -avP --delete "${BUILDDIR_ABSPATH}/images/" "${IMGDIR_ABSPATH}/buildroot-images"
 }
 
 do_install()
 {
   if test -d "${BUILDDIR_ABSPATH}" && 
-     test -f "${BUILDDIR_ABSPATH}/u-boot.bin"; then
+     test -n "$(ls -A "${BUILDDIR_ABSPATH}/images" 2>/dev/null)"; then
     call_make savedefconfig
     save_config_from_builddir
     do_install_imgdir
@@ -215,8 +218,7 @@ do_install()
 }
 
 
-# Then do the necessary actions
-# for desired target(s)
+# Handle script commands
 #
 cd "${SRCDIR_ABSPATH}"
 check_install_defconfig
@@ -233,6 +235,9 @@ case "${SCRIPT_COMMAND}" in
     ;;
   clean)
     call_make clean
+    ;;
+  dirclean)
+    call_make dirclean
     ;;
   distclean)
     call_make distclean
@@ -251,10 +256,10 @@ case "${SCRIPT_COMMAND}" in
     save_config_from_builddir
     ;;
   shell)
-    exec env O="${BUILDDIR_PATH}" /bin/bash
+    exec env O="${BUILDDIR_ABSPATH}" /bin/bash
     ;;
   *)
-    exec env O="${BUILDDIR_PATH}" /bin/sh -c "${SCRIPT_COMMAND} $@"
+    exec env O="${BUILDDIR_ABSPATH}" /bin/sh -c "${SCRIPT_COMMAND} $@"
     ;;
 esac
 

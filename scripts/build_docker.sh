@@ -2,19 +2,19 @@
 
 set -e
 
-IMAGE=""
-DIR=""
+DOCKER_IMAGE=""
+WORKSPACE_DIR=""
 ARGS=""
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
   case "$1" in
-    -i)
-      IMAGE="$2"
+    -i|--image)
+      DOCKER_IMAGE="$2"
       shift # past argument
       shift # past value
       ;;
-    -d)
-      DIR="$2"
+    -w|--workspacedir)
+      WORKSPACE_DIR="$2"
       shift # past argument
       shift # past value
       ;;
@@ -31,24 +31,24 @@ done
 # default to current working
 # directory if nothing is given.
 #
-case "$IMAGE" in
-  sel4|yocto|buildroot|uboot|kernel)
+case "${DOCKER_IMAGE}" in
+  sel4_builder|yocto_builder|tii_builder)
   ;;
   *)
-    printf "ERROR: Image name required (sel4|yocto|buildroot|uboot|kernel)!\n" >&2;
+    printf "%s: ERROR: Docker image name required (sel4_builder|yocto_builder|tii_builder)!\n" "$0" >&2;
     exit 1
   ;;
 esac
 
-if test -z "$DIR"; then
-  DIR="$(pwd)"
+if test -z "{$WORKSPACE_DIR}"; then
+  WORKSPACE_DIR="$(pwd)"
 fi
 
-set -- "$ARGS"
+set -- "${ARGS}"
 
 exec \
   docker build \
-  -t tiiuae/"${IMAGE}"_build:latest \
-  -f "${DIR}"/docker/"${IMAGE}".Dockerfile \
-  "${DIR}"/docker \
-  "$@"
+  -t "tiiuae/${DOCKER_IMAGE}:latest" \
+  -f "${WORKSPACE_DIR}/docker/${DOCKER_IMAGE}.Dockerfile" \
+  "${WORKSPACE_DIR}/docker/" \
+  $@

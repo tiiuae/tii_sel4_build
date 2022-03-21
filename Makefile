@@ -1,50 +1,49 @@
-WSDIR=$(shell pwd)
+WORKSPACE=$(shell pwd)
 IMAGE=
-ACTION=
+COMMAND=
 
-WORKSPACE_PATH := /workspace/
 PLATFORM := rpi4
-PLAT_BASEDIR := tii_sel4_build/images/$(PLATFORM)
+NUM_NODES := 4
+CROSS_COMPILE := aarch64-linux-gnu-
+WORKSPACE_PATH := /workspace/
+ENV_ROOTDIR := $(shell pwd)
 
-BR_CONFIG := $(PLAT_BASEDIR)/buildroot-config
-BR_SDK_CONFIG := $(PLAT_BASEDIR)/buildroot-sdk-config
-KERNEL_CONFIG := $(PLAT_BASEDIR)/linux-config
-UBOOT_CONFIG := $(PLAT_BASEDIR)/uboot-config
+PLATFORM_BASEDIR := tii_sel4_build/images/$(PLATFORM)
 
-BR_BUILDDIR := br-build
+BUILDROOT_CONFIG := $(PLATFORM_BASEDIR)/buildroot-config
+BUILDROOT_SDK_CONFIG := $(PLATFORM_BASEDIR)/buildroot-sdk-config
+KERNEL_CONFIG := $(PLATFORM_BASEDIR)/linux-config
+UBOOT_CONFIG := $(PLATFORM_BASEDIR)/uboot-config
+
+BUILDROOT_BUILDDIR := buildroot-build
 KERNEL_BUILDDIR := linux-build
 UBOOT_BUILDDIR := uboot-build
 
-BR_SRCDIR := projects/buildroot
+BUILDROOT_SRCDIR := projects/buildroot
 KERNEL_SRCDIR := projects/torvalds/linux
 UBOOT_SRCDIR := projects/uboot
 
-KERNEL_VER := $(shell make -C $(KERNEL_SRCDIR) -s kernelversion)
-DEST_IMGDIR := projects/camkes-vm-images/$(PLATFORM)
+KERNEL_VERSION := $(shell make -C $(KERNEL_SRCDIR) -s kernelversion)
+DEST_IMAGEDIR := projects/camkes-vm-images/$(PLATFORM)
 
 all: vm_minimal vm_multi vm_cross_connector .config
 
 rpi4_defconfig:
-	@echo 'PLATFORM=rpi4' > .config
-	@echo 'NUM_NODES=4' >> .config
-	@echo 'CROSS_COMPILE=aarch64-linux-gnu-' >> .config
+	@echo 'PLATFORM=$(PLATFORM)' > .config
+	@echo 'NUM_NODES=$(NUM_NODES)' >> .config
+	@echo 'CROSS_COMPILE=$(CROSS_COMPILE)' >> .config
 	@echo 'ARCH=arm64' >> .config
 	@echo 'WORKSPACE_PATH=$(WORKSPACE_PATH)' >> .config
-	@echo 'BR_CONFIG=$(addprefix $(WORKSPACE_PATH), $(BR_CONFIG))' >> .config
-	@echo 'BR_SDK_CONFIG=$(addprefix $(WORKSPACE_PATH), $(BR_SDK_CONFIG))' >> .config
-	@echo 'BR_BUILDDIR=$(addprefix $(WORKSPACE_PATH), $(BR_BUILDDIR))' >> .config
-	@echo 'BR_SRCDIR=$(addprefix $(WORKSPACE_PATH), $(BR_SRCDIR))' >> .config
-	@echo 'LINUX_CONFIG=$(addprefix $(WORKSPACE_PATH), $(KERNEL_CONFIG))' >> .config
-	@echo 'LINUX_BUILDDIR=$(addprefix $(WORKSPACE_PATH), $(KERNEL_BUILDDIR))' >> .config
-	@echo 'LINUX_SRCDIR=$(addprefix $(WORKSPACE_PATH), $(KERNEL_SRCDIR))' >> .config
-	@echo 'UBOOT_CONFIG=$(addprefix $(WORKSPACE_PATH), $(UBOOT_CONFIG))' >> .config
-	@echo 'UBOOT_BUILDDIR=$(addprefix $(WORKSPACE_PATH), $(UBOOT_BUILDDIR))' >> .config
-	@echo 'UBOOT_SRCDIR=$(addprefix $(WORKSPACE_PATH), $(UBOOT_SRCDIR))' >> .config
-	@echo 'IMGDIR=$(addprefix $(WORKSPACE_PATH), $(DEST_IMGDIR))' >> .config
-	@echo 'KERNELVER=$(KERNEL_VER)' >> .config
 
 build_camkes: .config
-	@scripts/build_camkes.sh
+	CROSS_COMPILE=$(CROSS_COMPILE) \
+	ARCH=aarch64 \
+	WORKSPACE_PATH=$(WORKSPACE_PATH) \
+	ENV_ROOTDIR=$(ENV_ROOTDIR) \
+	PLATFORM=$(PLATFORM) \
+	NUM_NODES=$(NUM_NODES) \
+	CAMKES_VM_APP=$(CAMKES_VM_APP) \
+	./scripts/build_camkes.sh
 
 build_sel4test: .config
 	@scripts/build_sel4test.sh
@@ -63,32 +62,43 @@ vm_cross_connector:
 sel4test:
 	make build_sel4test
 
-build_guest_rootfs: .config
-	@scripts/build_guest_rootfs.sh olddefconfig
-	@scripts/build_guest_rootfs.sh build
-	@scripts/build_guest_rootfs.sh install
-
-build_guest_linux: .config
-	@scripts/build_guest_linux.sh olddefconfig
-	@scripts/build_guest_linux.sh build
-	@scripts/build_guest_linux.sh install
-
-build_uboot: .config
-	@scripts/build_uboot.sh olddefconfig
-	@scripts/build_uboot.sh build
-	@scripts/build_uboot.sh install
-
-guest_rootfs: .config
-	@scripts/build_guest_rootfs.sh $(ACTION)
-
-guest_linux: .config
-	@scripts/build_guest_linux.sh $(ACTION)
-
-uboot: .config
-	@scripts/build_uboot.sh $(ACTION)
-
 docker: .config
-	@scripts/build_docker.sh -i $(IMAGE) -d $(WSDIR)
+	@scripts/build_docker.sh --image $(IMAGE) --workspacedir $(WORKSPACE)
 
 shell: .config
-	@docker/enter_container.sh -i $(IMAGE) -d $(WSDIR)
+	@docker/enter_container.sh --image $(IMAGE) --workspacedir $(WORKSPACE)
+
+build_uboot: .config
+	CROSS_COMPILE=$(CROSS_COMPILE) \
+	ARCH=arm \
+	WORKSPACE_PATH=$(WORKSPACE_PATH) \
+	ENV_ROOTDIR=$(ENV_ROOTDIR) \
+	CONFIG=$(UBOOT_CONFIG) \
+	BUILDDIR=$(UBOOT_BUILDDIR) \
+	SRCDIR=$(UBOOT_SRCDIR) \
+	IMGDIR=$(DEST_IMAGEDIR) \
+	./scripts/build_uboot.sh $(COMMAND)
+
+build_rootfs: .config
+	CROSS_COMPILE=$(CROSS_COMPILE) \
+	ARCH=arm64 \
+	WORKSPACE_PATH=$(WORKSPACE_PATH) \
+	ENV_ROOTDIR=$(ENV_ROOTDIR) \
+	CONFIG=$(BUILDROOT_CONFIG) \
+	SDK_CONFIG=$(BUILDROOT_SDK_CONFIG) \
+	BUILDDIR=$(BUILDROOT_BUILDDIR) \
+	SRCDIR=$(BUILDROOT_SRCDIR) \
+	IMGDIR=$(DEST_IMAGEDIR) \
+	LINUX_KERNEL_VERSION=$(KERNEL_VERSION) \
+	./scripts/build_rootfs.sh $(COMMAND)
+
+build_linux: .config
+	CROSS_COMPILE=$(CROSS_COMPILE) \
+	ARCH=arm64 \
+	WORKSPACE_PATH=$(WORKSPACE_PATH) \
+	ENV_ROOTDIR=$(ENV_ROOTDIR) \
+	CONFIG=$(KERNEL_CONFIG) \
+	BUILDDIR=$(KERNEL_BUILDDIR) \
+	SRCDIR=$(KERNEL_SRCDIR) \
+	IMGDIR=$(DEST_IMAGEDIR) \
+	./scripts/build_linux.sh $(COMMAND)

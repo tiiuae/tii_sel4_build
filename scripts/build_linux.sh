@@ -167,7 +167,7 @@ do_install_defconfig()
 do_build()
 {
   if test -d "${BUILDDIR_ABSPATH}" && 
-     test -f "${BUILDDIR_ABSPATH}/u-boot.bin"; then
+     test -f "${BUILDDIR_ABSPATH}/arch/arm64/boot/Image"; then
 
      log_stdout "Build directory contains built target(s). \n"
      
@@ -199,13 +199,21 @@ do_build()
 do_install_imgdir()
 {
   cp -v "${CONFIG_FILE_DEST_ABSPATH}" "${IMGDIR_ABSPATH}/${CONFIG_FILE_BASENAME}"
-  cp -v "${BUILDDIR_ABSPATH}/u-boot.bin" "${IMGDIR_ABSPATH}/u-boot.bin"
+  cp -v "${BUILDDIR_ABSPATH}/arch/arm64/boot/Image" "${IMGDIR_ABSPATH}/linux"
+  cp -v "${BUILDDIR_ABSPATH}/arch/arm64/boot/dts/broadcom/bcm2711-rpi-4-b.dtb" "${IMGDIR_ABSPATH}/linux-dtb"
+  cp -v "${BUILDDIR_ABSPATH}/Module.symvers" "${IMGDIR_ABSPATH}/linux-symvers"
+  cp -v "${BUILDDIR_ABSPATH}/System.map" "${IMGDIR_ABSPATH}/linux-system-map"
+  "${BUILDDIR_ABSPATH}/scripts/dtc/dtc" -I dtb -O dts -o "${IMGDIR_ABSPATH}/linux.dts" "${IMGDIR_ABSPATH}/linux-dtb"
+  TMPDIR=$(mktemp -d)
+  call_make INSTALL_MOD_PATH="${TMPDIR}" modules_install
+  rsync -avP --delete --no-links "${TMPDIR}/" "${IMGDIR_ABSPATH}/linux-modules"
+  rm -rf "${TMPDIR}"
 }
 
 do_install()
 {
   if test -d "${BUILDDIR_ABSPATH}" && 
-     test -f "${BUILDDIR_ABSPATH}/u-boot.bin"; then
+     test -f "${BUILDDIR_ABSPATH}/arch/arm64/boot/Image"; then
     call_make savedefconfig
     save_config_from_builddir
     do_install_imgdir
@@ -215,33 +223,42 @@ do_install()
 }
 
 
-# Then do the necessary actions
-# for desired target(s)
+# Handle script commands
 #
 cd "${SRCDIR_ABSPATH}"
 check_install_defconfig
 export ARCH="${ARCH}"
 export CROSS_COMPILE="${CROSS_COMPILE}"
 
+
 case "${SCRIPT_COMMAND}" in
   all)
-    do_build all
+    call_make all
     do_install_imgdir
     ;;
   build)
-    do_build all
+    call_make all
     ;;
   clean)
     call_make clean
     ;;
+  dirclean)
+    call_make dirclean
+    ;;
   distclean)
     call_make distclean
+    ;;
+  dtbs)
+    call_make dtbs
     ;;
   install)
     do_install
     ;;
   menuconfig)
     call_make menuconfig
+    ;;
+  mrproper)
+    call_make mrproper
     ;;
   olddefconfig)
     do_install_defconfig
@@ -251,10 +268,10 @@ case "${SCRIPT_COMMAND}" in
     save_config_from_builddir
     ;;
   shell)
-    exec env O="${BUILDDIR_PATH}" /bin/bash
+    exec env O="${BUILDDIR_ABSPATH}" /bin/bash
     ;;
   *)
-    exec env O="${BUILDDIR_PATH}" /bin/sh -c "${SCRIPT_COMMAND} $@"
+    exec env O="${BUILDDIR_ABSPATH}" /bin/sh -c "${SCRIPT_COMMAND} $@"
     ;;
 esac
 
