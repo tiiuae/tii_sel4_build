@@ -3,7 +3,7 @@
 set -e
 
 
-REQUIRED_ENV_VARS="CROSS_COMPILE ARCH WORKSPACE_PATH ENV_ROOTDIR BUILDDIR SRCDIR PLATFORM NUM_NODES CAMKES_VM_APP"
+REQUIRED_ENV_VARS="CROSS_COMPILE ARCH WORKSPACE_PATH ENV_ROOTDIR BUILD_DIR_RELPATH PROJECT_DIR_RELPATH PLATFORM NUM_NODES CAMKES_VM_APP"
 
 
 # Crude logging functions
@@ -59,7 +59,7 @@ generate_env_file()
 SCRIPT_ABSPATH="$(realpath "$0")"
 SCRIPT_DIR_ABSPATH="$(dirname "${SCRIPT_ABSPATH}")"
 SCRIPT_CWD="$(pwd)"
-SCRIPT_RELPATH="${SCRIPT_ABSPATH#${SCRIPT_CWD}}"
+SCRIPT_RELPATH="${SCRIPT_ABSPATH#"${SCRIPT_CWD}"}"
 
 # Now be mad if all the required
 # variables are not set
@@ -96,31 +96,32 @@ fi
 # Configure file paths and misc stuff
 # for the commands to use
 #
-BUILDDIR_ABSPATH="$(realpath "${WORKSPACE_PATH}/${BUILDDIR}")"
-SRCDIR_ABSPATH="$(realpath "${WORKSPACE_PATH}/${SRCDIR}")"
+BUILD_DIR_ABSPATH="$(realpath "${WORKSPACE_PATH}/${BUILD_DIR_RELPATH}")"
+PROJECT_DIR_ABSPATH="$(realpath "${WORKSPACE_PATH}/${PROJECT_DIR_RELPATH}")"
 
 
 # Setup build directory
 #
-rm -rf "${BUILDDIR_ABSPATH}"
-mkdir -p "${BUILDDIR_ABSPATH}"
-ln -s "${WORKSPACE_PATH}/tools/seL4/cmake-tool/init-build.sh" "${BUILDDIR_ABSPATH}/init-build.sh"
-ln -s "${SRCDIR_ABSPATH}/easy-settings.cmake" "${BUILDDIR_ABSPATH}/easy-settings.cmake"
+rm -rf "${BUILD_DIR_ABSPATH}"
+mkdir -p "${BUILD_DIR_ABSPATH}"
+ln -s "${WORKSPACE_PATH}/tools/seL4/cmake-tool/init-build.sh" "${BUILD_DIR_ABSPATH}/init-build.sh"
+ln -s "${PROJECT_DIR_ABSPATH}/easy-settings.cmake" "${BUILD_DIR_ABSPATH}/easy-settings.cmake"
 
 
 # Build
 #
-cd "${BUILDDIR_ABSPATH}"
+cd "${BUILD_DIR_ABSPATH}"
 ./init-build.sh -B . -DAARCH64=1 -DPLATFORM="${PLATFORM}" -DCROSS_COMPILER_PREFIX="${CROSS_COMPILE}" -DNUM_NODES="${NUM_NODES}" -DCAMKES_VM_APP="${CAMKES_VM_APP}" $@
 ninja
 
+
 # Generate U-Boot script
-ARHC="${ARCH}" "${SCRIPT_DIR_ABSPATH}/generate_uboot_bootscript.sh" -b . -t images -s elfloader/elfloader
+ARCH=arm64 "${SCRIPT_DIR_ABSPATH}/generate_uboot_bootscript.sh" -b . -t images -s elfloader/elfloader
 
 echo "--------------------------------------------------------"
 echo "--------------------------------------------------------"
 echo "--------------------------------------------------------"
 echo "                                                        "
-echo "Here are your binaries in "${BUILDDIR_ABSPATH}/images": "
+echo "Here are your binaries in "${BUILD_DIR_ABSPATH}/images": "
 echo "                                                        "
 ls -la ./images

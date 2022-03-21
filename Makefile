@@ -5,7 +5,7 @@ COMMAND=
 PLATFORM := rpi4
 NUM_NODES := 4
 CROSS_COMPILE := aarch64-linux-gnu-
-WORKSPACE_PATH := /workspace/
+WORKSPACE_PATH := /workspace
 ENV_ROOTDIR := $(shell pwd)
 
 PLATFORM_BASEDIR := tii_sel4_build/images/$(PLATFORM)
