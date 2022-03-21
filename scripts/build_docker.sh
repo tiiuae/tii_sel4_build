@@ -40,7 +40,7 @@ case "${DOCKER_IMAGE}" in
   ;;
 esac
 
-if test -z "{$WORKSPACE_DIR}"; then
+if test -z "${WORKSPACE_DIR}"; then
   WORKSPACE_DIR="$(pwd)"
 fi
 
