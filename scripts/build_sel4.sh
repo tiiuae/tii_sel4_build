@@ -3,8 +3,7 @@
 set -e
 
 
-REQUIRED_ENV_VARS="CROSS_COMPILE ARCH WORKSPACE_PATH ENV_ROOTDIR SRCDIR PLATFORM NUM_NODES CAMKES_VM_APP"
-DOCKER_ENVFILE=""
+REQUIRED_ENV_VARS="CROSS_COMPILE ARCH WORKSPACE_PATH ENV_ROOTDIR BUILDDIR SRCDIR PLATFORM NUM_NODES CAMKES_VM_APP"
 
 
 # Crude logging functions
@@ -93,7 +92,6 @@ else
   log_stdout "Running in build container, continuing...\n"
 fi
 
-set -x
 
 # Configure file paths and misc stuff
 # for the commands to use
@@ -104,10 +102,10 @@ SRCDIR_ABSPATH="$(realpath "${WORKSPACE_PATH}/${SRCDIR}")"
 
 # Setup build directory
 #
-rm -rif "${BUILDDIR_ABSPATH}"
+rm -rf "${BUILDDIR_ABSPATH}"
 mkdir -p "${BUILDDIR_ABSPATH}"
 ln -s "${WORKSPACE_PATH}/tools/seL4/cmake-tool/init-build.sh" "${BUILDDIR_ABSPATH}/init-build.sh"
-ln -s "${SRCDIR_ABSPATH}/easy-settings.cmake" "${BUILDDIR_ABSPATH}"
+ln -s "${SRCDIR_ABSPATH}/easy-settings.cmake" "${BUILDDIR_ABSPATH}/easy-settings.cmake"
 
 
 # Build
