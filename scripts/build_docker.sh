@@ -2,24 +2,39 @@
 
 set -e
 
-DOCKER_IMAGE=""
-WORKSPACE_DIR=""
-ARGS=""
+# Look for these first
+# in the environment
+# variables.
+#
+DOCKER_IMAGE="${DOCKER_IMAGE}"
+WORKSPACE_DIR="${WORKSPACE_DIR}"
+DOCKER_ARGS="${DOCKER_ARGS}"
+OTHER_ARGS=""
 
+# Then parse args. Passed
+# argument value overrides
+# the environment variable
+# value (if set).
+#
 while [ $# -gt 0 ]; do
-  case "$1" in
-    -i|--image)
-      DOCKER_IMAGE="$2"
+  case "${1}" in
+    -d|--dockerimage)
+      DOCKER_IMAGE="${2}"
       shift # past argument
       shift # past value
       ;;
     -w|--workspacedir)
-      WORKSPACE_DIR="$2"
+      WORKSPACE_DIR="${2}"
+      shift # past argument
+      shift # past value
+      ;;
+    -a|--dockerarg)
+      DOCKER_ARGS="${DOCKER_ARGS:+${DOCKER_ARGS}} ${2}"
       shift # past argument
       shift # past value
       ;;
     *)
-      ARGS+=" $1" # save positional args
+      OTHER_ARGS="${OTHER_ARGS:+${OTHER_ARGS}} ${1}" # save positional args
       shift # past argument
       ;;
   esac
@@ -44,11 +59,12 @@ if test -z "${WORKSPACE_DIR}"; then
   WORKSPACE_DIR="$(pwd)"
 fi
 
-set -- "${ARGS}"
+set -- "${OTHER_ARGS}"
 
 exec \
   docker build \
   -t "tiiuae/${DOCKER_IMAGE}:latest" \
   -f "${WORKSPACE_DIR}/docker/${DOCKER_IMAGE}.Dockerfile" \
   "${WORKSPACE_DIR}/docker/" \
+  ${DOCKER_ARGS} \
   $@

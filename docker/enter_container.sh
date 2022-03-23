@@ -2,36 +2,52 @@
 
 set -eE
 
-DOCKER_ENVFILE=""
-DOCKER_IMAGE=""
-WORKSPACE_DIR=""
-ARGS=""
+
+# Look for these first
+# in the environment
+# variables.
+#
+DOCKER_ENVFILE="${DOCKER_ENVFILE}"
+DOCKER_IMAGE="${DOCKER_IMAGE}"
+WORKSPACE_DIR="${WORKSPACE_DIR}"
+DOCKER_ARGS="${DOCKER_ARGS}"
+OTHER_ARGS=""
 
 
-while [ $# -gt 0 ]; 
-do
-  case "$1" in
+# Then parse args. Passed
+# argument value overrides
+# the environment variable
+# value (if set).
+#
+while [ $# -gt 0 ]; do
+  case "${1}" in
     -e|--envfile)
-      DOCKER_ENVFILE="$2"
+      DOCKER_ENVFILE="${2}"
       shift # past argument
       shift # past value
       ;;
-    -i|--image)
-      DOCKER_IMAGE="$2"
+    -d|--dockerimage)
+      DOCKER_IMAGE="${2}"
       shift # past argument
       shift # past value
       ;;
     -w|--workspacedir)
-      WORKSPACE_DIR="$2"
+      WORKSPACE_DIR="${2}"
+      shift # past argument
+      shift # past value
+      ;;
+    -a|--dockerarg)
+      DOCKER_ARGS="${DOCKER_ARGS:+${DOCKER_ARGS}} ${2}"
       shift # past argument
       shift # past value
       ;;
     *)
-      ARGS+=" $1" # save positional args
+      OTHER_ARGS="${OTHER_ARGS:+${OTHER_ARGS}} ${1}" # save positional args
       shift # past argument
       ;;
   esac
 done
+
 
 # Validate input arguments.
 # Env file is optional,
@@ -49,7 +65,7 @@ case "${DOCKER_IMAGE}" in
   ;;
 esac
 
-if test -z "$WORKSPACE_DIR"; then
+if test -z "${WORKSPACE_DIR}"; then
   WORKSPACE_DIR="$(pwd)"
 fi
 
@@ -61,7 +77,7 @@ fi
 # the expansion result removes the quotes.
 #
 
-set -- "${ARGS}"
+set -- "${OTHER_ARGS}"
 
 exec \
   docker run \
@@ -73,6 +89,5 @@ exec \
   --add-host host.docker.internal:host-gateway \
   -h "${DOCKER_IMAGE}" \
   "tiiuae/${DOCKER_IMAGE}:latest" \
+  ${DOCKER_ARGS} \
   $@
-
-exit 0

@@ -1,12 +1,22 @@
 FROM ubuntu:21.04
 
+ARG USERNAME=build
+ARG PASSWORD=build
+ARG HOMEDIR=/home/build
+ARG USERSHELL=/bin/bash
+ARG UID=1000
+ARG GID=1000
+
 # tzdata noninteractive install
 ENV TZ=Europe/Helsinki
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Install basic tools, Buildroot, Linux kernel and U-Boot deps
+#
 # https://buildroot.org/downloads/manual/manual.html#requirement
+#
 # screen is required by linux menuconfig
+#
 # https://u-boot.readthedocs.io/en/latest/build/gcc.html#dependencies
 # https://linux-sunxi.org/U-Boot
 #
@@ -52,7 +62,6 @@ RUN \
         locales \
         lz4 \
         lzma \
-        lzma-alone \
         make \
         nano \
         openssl \
@@ -69,9 +78,9 @@ RUN \
         python3-sphinx-rtd-theme \
         python3-virtualenv \
         rsync \
+        screen \
         sed \
         socat \
-        sudo \
         swig \
         tar \
         texinfo \
@@ -82,15 +91,18 @@ RUN \
 
 RUN locale-gen en_US.UTF-8
 
-RUN useradd -m -d /home/build -s /bin/bash -G sudo -u 1000 build
-RUN echo 'build:build' | chpasswd
 RUN ln -s /usr/bin/python3 /usr/bin/python
-RUN printf '\n\n\
-eval $(ssh-agent -s &> /dev/null)\n\
-find /home/build/.ssh/ -type f -exec grep -l "PRIVATE" {} \; | xargs ssh-add &> /dev/null'\
->> /home/build/.bashrc
-USER build
+RUN ln -sf /bin/bash /bin/sh
+RUN groupadd -g ${GID} -o ${USERNAME}
+RUN useradd -m -d ${HOMEDIR} -s ${USERSHELL} -o -u ${UID} -g ${GID} -p "$(openssl passwd -6 ${PASSWORD})" ${USERNAME}
+RUN mkdir -p ${HOMEDIR}/.ssh -m 700 && chown ${UID}:${GID} ${HOMEDIR}/.ssh
+RUN printf "\n\n\
+eval \$(ssh-agent -s &> /dev/null)\n\
+find ${HOMEDIR}/.ssh/ -type f -exec grep -l "PRIVATE" {} \; | xargs ssh-add &> /dev/null"\
+>> ${HOMEDIR}/.bashrc
+
+USER ${USERNAME}
 
 ENV WORKSPACE=/workspace
-
 WORKDIR /workspace
+

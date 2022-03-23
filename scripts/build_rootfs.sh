@@ -86,7 +86,10 @@ if head -n 1 < /proc/1/sched | grep -q 'init\|systemd'; then
   generate_env_file
   printf "%s=%s\n" "DOCKER_ENVFILE" "${WORKSPACE_PATH}/$(basename "${DOCKER_ENVFILE}")" >> "${DOCKER_ENVFILE}"
 
-  exec "${DOCKER_DIR_ABSPATH}/enter_container.sh" --envfile "${DOCKER_ENVFILE}" --image tii_builder --workspacedir "${SCRIPT_CWD}" "${WORKSPACE_PATH}/${SCRIPT_RELPATH}" $@
+  exec env DOCKER_IMAGE=tii_builder \
+       env WORKSPACE_DIR="${SCRIPT_CWD}" \
+       env DOCKER_ENVFILE="${DOCKER_ENVFILE}" \
+       "${DOCKER_DIR_ABSPATH}/enter_container.sh" "${WORKSPACE_PATH}/${SCRIPT_RELPATH}" $@
 else
   log_stdout "Running in build container, continuing...\n"
 fi
@@ -119,6 +122,7 @@ BUILDDIR_ABSPATH="$(realpath "${BUILDDIR}")"
 SRCDIR_ABSPATH="$(realpath "${SRCDIR}")"
 IMGDIR_ABSPATH="$(realpath "${IMGDIR}")"
 
+
 # The -p argument ensures no
 # error if the directory exists
 # already, and it creates parent
@@ -138,7 +142,7 @@ CONFIG_FILE_DEST_ABSPATH="$(realpath "${BUILDDIR_ABSPATH}/${CONFIG_FILE_SRC_BASE
 
 call_make()
 {
-  make O="${BUILDDIR_ABSPATH}" ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" "$@"
+  make O="${BUILDDIR_ABSPATH}" "$@"
 }
 
 src_config_to_builddir()
@@ -170,31 +174,38 @@ do_build()
   if test -d "${BUILDDIR_ABSPATH}" && 
      test -n "$(ls -A "${BUILDDIR_ABSPATH}/images" 2>/dev/null)"; then
 
-     log_stdout "Build directory contains built target(s). \n"
+     log_stdout "Build directory contains built target(s).\n"
      
-     while true; 
-     do
+     while true; do
 
-       # /bin/sh read doesn't understand -t option
-       #read -t10 -p "Do you want to clean build directory before continuing? (Y)es/(N)o/(C)ancel? " USER_RESP
-       read -p "Do you want to clean build directory before continuing? (Y)es/(N)o/(C)ancel? " USER_RESP
+       read -t10 -p "Do you want to clean build directory before continuing? (Y)es/(N)o/(C)ancel? " USER_RESP
 
        if [ $? -gt 128 ]; then
          log_stdout "Timeout while waiting for input, defaulting to \"(Y)es\"\n"
-         call_make clean
-         break
-       else
-         case "${USER_RESP}" in
-           [Yy]*) call_make clean; break;;
-           [Nn]*) break;;
-           [Cc]*) exit;;
-           *) log_stdout "Please answer (Y)es/(N)o/(C)ancel. \n";;
-         esac
+         USER_RESP="Y"
        fi
+
+       case "${USER_RESP}" in
+         [Yy]*)
+           log_stdout "Cleaning build directory before rebuild...\n"
+           call_make clean; 
+           break
+           ;;
+         [Nn]*) 
+           break
+           ;;
+         [Cc]*) 
+           exit
+           ;;
+         *) 
+           log_stdout "Please answer (Y)es/(N)o/(C)ancel.\n"
+           ;;
+       esac
      done
   fi
 
-  call_make -j"$(nproc)" "$@"
+  JOBS=$(($(nproc)/2))
+  call_make -j"${JOBS}" "$@"
 }
 
 do_install_imgdir()
@@ -222,11 +233,12 @@ do_install()
 cd "${SRCDIR_ABSPATH}"
 check_install_defconfig
 export ARCH="${ARCH}"
-export CROSS_COMPILE="${CROSS_COMPILE}"
+#export CROSS_COMPILE="${CROSS_COMPILE}"
 
 case "${SCRIPT_COMMAND}" in
   all)
     do_build all
+    #do_build all V=1 | tee -a "${BUILDDIR_ABSPATH}/buildlog_$(date +%F_%H-%M-%S.log)"
     do_install_imgdir
     ;;
   build)
@@ -255,11 +267,29 @@ case "${SCRIPT_COMMAND}" in
     save_config_from_builddir
     ;;
   shell)
-    exec env O="${BUILDDIR_ABSPATH}" /bin/bash
+    exec env \
+        BUILDDIR="${BUILDDIR_ABSPATH}" \
+        SRCDIR="${SRCDIR_ABSPATH}" \
+        IMGDIR="${IMGDIR_ABSPATH}" \
+        ARCH="${ARCH}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        CONFIG_FILE_SRC_ABSPATH="${CONFIG_FILE_SRC_ABSPATH}" \
+        CONFIG_FILE_SRC_BASENAME="${CONFIG_FILE_SRC_BASENAME}" \
+        CONFIG_FILE_DEST_ABSPATH="${CONFIG_FILE_DEST_ABSPATH}" \
+        O="${BUILDDIR_ABSPATH}" \
+        /bin/bash
     ;;
   *)
-    exec env O="${BUILDDIR_ABSPATH}" /bin/sh -c "${SCRIPT_COMMAND} $@"
+    exec env \
+        BUILDDIR="${BUILDDIR_ABSPATH}" \
+        SRCDIR="${SRCDIR_ABSPATH}" \
+        IMGDIR="${IMGDIR_ABSPATH}" \
+        ARCH="${ARCH}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        CONFIG_FILE_SRC_ABSPATH="${CONFIG_FILE_SRC_ABSPATH}" \
+        CONFIG_FILE_SRC_BASENAME="${CONFIG_FILE_SRC_BASENAME}" \
+        CONFIG_FILE_DEST_ABSPATH="${CONFIG_FILE_DEST_ABSPATH}" \
+        O="${BUILDDIR_ABSPATH}" \
+        /bin/bash -c "${SCRIPT_COMMAND} $@"
     ;;
 esac
-
-cleanup

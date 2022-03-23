@@ -1,8 +1,25 @@
 #!/bin/sh
 
-SCRIPT_NAME=$(realpath $0)
-SCRIPT_DIR=$(dirname ${SCRIPT_NAME})
+set -e
 
-. "$(pwd)/.config"
+SCRIPT_ABSPATH="$(realpath "$0")"
+SCRIPT_DIR_ABSPATH="$(dirname "${SCRIPT_ABSPATH}")"
+SCRIPT_CWD="$(pwd)"
+SCRIPT_RELPATH="${SCRIPT_ABSPATH#"${SCRIPT_CWD}"}"
 
-exec ${SCRIPT_DIR}/build_sel4.sh ${PLATFORM}_sel4test projects/sel4test
+CAMKES_VM_APP_ABSPATH=$(realpath "projects/sel4test")
+PROJECT_DIR_RELPATH=".${CAMKES_VM_APP_ABSPATH#"${SCRIPT_CWD}"}"
+BUILD_DIR_RELPATH="./${PLATFORM}_sel4test"
+
+#SOURCE_DIR=$(ls -d projects/*/apps/Arm/${CAMKES_VM_APP} | cut -f-2 -d'/')
+
+exec env \
+     CROSS_COMPILE="${CROSS_COMPILE}" \
+     ARCH="${ARCH}" \
+     WORKSPACE_PATH="${WORKSPACE_PATH}" \
+     ENV_ROOTDIR="${ENV_ROOTDIR}" \
+     BUILD_DIR_RELPATH="${BUILD_DIR_RELPATH}" \
+     PROJECT_DIR_RELPATH="${PROJECT_DIR_RELPATH}" \
+     PLATFORM="${PLATFORM}" \
+     NUM_NODES="${NUM_NODES}" \
+     "${SCRIPT_DIR_ABSPATH}/build_sel4.sh"

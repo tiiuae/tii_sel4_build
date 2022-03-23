@@ -3,7 +3,7 @@
 set -e
 
 
-REQUIRED_ENV_VARS="CROSS_COMPILE ARCH WORKSPACE_PATH ENV_ROOTDIR BUILD_DIR_RELPATH PROJECT_DIR_RELPATH PLATFORM NUM_NODES CAMKES_VM_APP"
+REQUIRED_ENV_VARS="CROSS_COMPILE ARCH WORKSPACE_PATH ENV_ROOTDIR BUILD_DIR_RELPATH PROJECT_DIR_RELPATH PLATFORM"
 
 
 # Crude logging functions
@@ -87,7 +87,10 @@ if head -n 1 < /proc/1/sched | grep -q 'init\|systemd'; then
   generate_env_file
   printf "%s=%s\n" "DOCKER_ENVFILE" "${WORKSPACE_PATH}/$(basename "${DOCKER_ENVFILE}")" >> "${DOCKER_ENVFILE}"
 
-  exec "${DOCKER_DIR_ABSPATH}/enter_container.sh" --envfile "${DOCKER_ENVFILE}" --image sel4_builder --workspacedir "${SCRIPT_CWD}" "${WORKSPACE_PATH}/${SCRIPT_RELPATH}" $@
+  exec env DOCKER_IMAGE=sel4_builder \
+       env WORKSPACE_DIR="${SCRIPT_CWD}" \
+       env DOCKER_ENVFILE="${DOCKER_ENVFILE}" \
+       "${DOCKER_DIR_ABSPATH}/enter_container.sh" "${WORKSPACE_PATH}/${SCRIPT_RELPATH}" $@
 else
   log_stdout "Running in build container, continuing...\n"
 fi
@@ -110,13 +113,23 @@ ln -s "${PROJECT_DIR_ABSPATH}/easy-settings.cmake" "${BUILD_DIR_ABSPATH}/easy-se
 
 # Build
 #
-cd "${BUILD_DIR_ABSPATH}"
-./init-build.sh -B . -DAARCH64=1 -DPLATFORM="${PLATFORM}" -DCROSS_COMPILER_PREFIX="${CROSS_COMPILE}" -DNUM_NODES="${NUM_NODES}" -DCAMKES_VM_APP="${CAMKES_VM_APP}" $@
-ninja
+#cd "${BUILD_DIR_ABSPATH}"
+"${BUILD_DIR_ABSPATH}"/init-build.sh \
+    -B "${BUILD_DIR_ABSPATH}" \
+    -DAARCH64=1 \
+    -DPLATFORM="${PLATFORM}" \
+    -DCROSS_COMPILER_PREFIX="${CROSS_COMPILE}" \
+    "${NUM_NODES:+"-DNUM_NODES=${NUM_NODES}"}" \
+    "${CAMKES_VM_APP:+"-DCAMKES_VM_APP=${CAMKES_VM_APP}"}" \
+    $@
+ninja -C "${BUILD_DIR_ABSPATH}"
 
 
 # Generate U-Boot script
-ARCH=arm64 "${SCRIPT_DIR_ABSPATH}/generate_uboot_bootscript.sh" -b . -t images -s elfloader/elfloader
+ARCH=arm64 \
+BUILD_DIR="${BUILD_DIR_ABSPATH}" \
+TARGET_DIR=images \
+"${SCRIPT_DIR_ABSPATH}/generate_uboot_bootscript.sh"
 
 echo "--------------------------------------------------------"
 echo "--------------------------------------------------------"
@@ -124,4 +137,4 @@ echo "--------------------------------------------------------"
 echo "                                                        "
 echo "Here are your binaries in "${BUILD_DIR_ABSPATH}/images": "
 echo "                                                        "
-ls -la ./images
+ls -la "${BUILD_DIR_ABSPATH}/images"
