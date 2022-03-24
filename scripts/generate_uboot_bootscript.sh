@@ -91,11 +91,9 @@ echo 'Running seL4 bootscript...'
 setenv capdl_image_load_addr ${LOADER_LOADADDR}
 setenv capdl_load_addr \${kernel_addr_r}
 setenv capdl_image ${CAPDL_IMG_NAME}
-setenv boot_tftp 'if tftp \${capdl_load_addr} \${capdl_image}; then go \${capdl_load_addr}; fi'
-setenv bootcmd 'run boot_tftp'
-saveenv
+setenv boot_sel4 'if tftp \${capdl_load_addr} \${capdl_image}; then go \${capdl_load_addr}; fi'
 echo 'Starting boot...'
-boot
+run boot_sel4;
 __EOF__
 
 # Generate U-Boot script

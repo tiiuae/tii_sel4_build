@@ -49,6 +49,19 @@ generate_env_file()
   DOCKER_ENVFILE="$(realpath $(mktemp --suffix=.list env-XXXXXXXX))"
   chmod 644 "${DOCKER_ENVFILE}"
 
+  # Add NUM_NODES and CAMKES_VM_APP
+  # to the list if they are set.
+  #
+  printenv NUM_NODES 1>/dev/null
+  if [ $? -eq 0 ]; then
+    REQUIRED_ENV_VARS="${REQUIRED_ENV_VARS} NUM_NODES"
+  fi
+
+  printenv CAMKES_VM_APP 1>/dev/null
+  if [ $? -eq 0 ]; then
+    REQUIRED_ENV_VARS="${REQUIRED_ENV_VARS} CAMKES_VM_APP"
+  fi
+
   for VAR in ${REQUIRED_ENV_VARS}; do
     VALUE=$(printenv "${VAR}")
     printf "%s=%s\n" "${VAR}" "${VALUE}" >> "${DOCKER_ENVFILE}"
