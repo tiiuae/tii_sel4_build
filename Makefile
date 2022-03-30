@@ -1,4 +1,4 @@
-all: vm_minimal vm_multi vm_cross_connector .config
+all: vm_minimal vm_multi .config
 
 rpi4_defconfig:
 	@echo 'PLATFORM=rpi4' > .config
@@ -18,9 +18,6 @@ vm_minimal:
 
 vm_multi:
 	CAMKES_VM_APP=vm_multi make build_camkes
-
-vm_cross_connector:
-	CAMKES_VM_APP=vm_cross_connector make build_camkes
 
 sel4test:
 	make build_sel4test

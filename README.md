@@ -106,10 +106,6 @@ host% <b>make vm_multi</b>
 host% <b>ls -l rpi4_vm_multi/images</b>
 -rwxr-xr-x. 1 build build 51656592 Aug 28 02:52 capdl-loader-image-arm-bcm2711
 
-host% <b>make vm_cross_connector</b>
-host% <b>ls -l rpi4_vm_cross_connector/images</b>
--rwxr-xr-x. 1 build build 51656608 Aug 28 02:54 capdl-loader-image-arm-bcm2711
-
 # Enter build container interactively -- you get all tools
 # (for example, aarch64-linux-gnu toolchain) without having
 # to install them onto host.
