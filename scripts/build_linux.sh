@@ -122,6 +122,11 @@ BUILDDIR_ABSPATH="$(realpath "${BUILDDIR}")"
 SRCDIR_ABSPATH="$(realpath "${SRCDIR}")"
 IMGDIR_ABSPATH="$(realpath "${IMGDIR}")"
 
+if test -n "${CONNECTOR_MODULE_DIR}"; then
+CONNECTOR_MODULE_DIR_ABSPATH="$(realpath "${CONNECTOR_MODULE_DIR}")"
+fi
+
+
 # The -p argument ensures no
 # error if the directory exists
 # already, and it creates parent
@@ -135,6 +140,7 @@ mkdir -p "${BUILDDIR_ABSPATH}"
 CONFIG_FILE_SRC_ABSPATH="$(realpath "${CONFIG}")"
 CONFIG_FILE_SRC_BASENAME="$(basename "${CONFIG_FILE_SRC_ABSPATH}")"
 CONFIG_FILE_DEST_ABSPATH="$(realpath "${BUILDDIR_ABSPATH}/.config")"
+DEFCONFIG_FILE_DEST_ABSPATH="$(realpath "${BUILDDIR_ABSPATH}/defconfig")"
 
 
 call_make()
@@ -150,6 +156,11 @@ install_config_to_builddir()
 save_config_from_builddir()
 {
   cp -v "${CONFIG_FILE_DEST_ABSPATH}" "${CONFIG_FILE_SRC_ABSPATH}"
+}
+
+save_defconfig_from_builddir()
+{
+  cp -v "${DEFCONFIG_FILE_DEST_ABSPATH}" "${CONFIG_FILE_SRC_ABSPATH}"
 }
 
 check_install_defconfig()
@@ -205,9 +216,16 @@ do_build()
   call_make -j"${JOBS}" "$@"
 }
 
+do_build_connector_module()
+{
+  pushd "${CONNECTOR_MODULE_DIR_ABSPATH}"
+  make -C "${BUILDDIR_ABSPATH}" M="$(pwd)" modules
+  popd
+}
+
 do_install_imgdir()
 {
-  cp -v "${CONFIG_FILE_DEST_ABSPATH}" "${IMGDIR_ABSPATH}/${CONFIG_FILE_BASENAME}"
+  cp -v "${DEFCONFIG_FILE_DEST_ABSPATH}" "${IMGDIR_ABSPATH}/${CONFIG_FILE_BASENAME}"
   cp -v "${BUILDDIR_ABSPATH}/arch/arm64/boot/Image" "${IMGDIR_ABSPATH}/linux"
   cp -v "${BUILDDIR_ABSPATH}/arch/arm64/boot/dts/broadcom/bcm2711-rpi-4-b.dtb" "${IMGDIR_ABSPATH}/linux-dtb"
   cp -v "${BUILDDIR_ABSPATH}/Module.symvers" "${IMGDIR_ABSPATH}/linux-symvers"
@@ -224,11 +242,19 @@ do_install()
   if test -d "${BUILDDIR_ABSPATH}" && 
      test -f "${BUILDDIR_ABSPATH}/arch/arm64/boot/Image"; then
     call_make savedefconfig
-    save_config_from_builddir
+    save_defconfig_from_builddir
     do_install_imgdir
   else
     log_stderr "ERROR: install: Build directory doesn't exist, or it is empty. Please build target(s) first before install.\n"
   fi
+}
+
+do_install_connector_module()
+{
+  # TODO: find out a non-hardcoded way
+  #
+  mkdir -p "${IMGDIR_ABSPATH}/linux-modules/lib/modules/5.16.0/connection"
+  cp -v "${CONNECTOR_MODULE_DIR_ABSPATH}/connection.ko" "${IMGDIR_ABSPATH}/linux-modules/lib/modules/5.16.0/connection/connection.ko"
 }
 
 
@@ -243,7 +269,7 @@ export CROSS_COMPILE="${CROSS_COMPILE}"
 case "${SCRIPT_COMMAND}" in
   all)
     call_make all
-    do_install_imgdir
+    do_install
     ;;
   build)
     call_make all
@@ -251,6 +277,9 @@ case "${SCRIPT_COMMAND}" in
   clean)
     call_make clean
     ;;
+  connector)
+    do_build_connector_module
+    do_install_connector_module
   dirclean)
     call_make dirclean
     ;;
@@ -274,7 +303,7 @@ case "${SCRIPT_COMMAND}" in
     ;;
   savedefconfig)
     call_make savedefconfig
-    save_config_from_builddir
+    save_defconfig_from_builddir
     ;;
   shell)
     exec env \
