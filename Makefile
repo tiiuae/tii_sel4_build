@@ -130,3 +130,14 @@ build_linux: .config
 	SRCDIR="$(KERNEL_SRCDIR)" \
 	IMGDIR="$(DEST_IMAGEDIR)" \
 	./scripts/build_linux.sh "$(COMMAND)"
+
+build_modules: .config
+	CROSS_COMPILE="$(CROSS_COMPILE)" \
+	ARCH=arm64 \
+	WORKSPACE_PATH="$(WORKSPACE_PATH)" \
+	ENV_ROOTDIR="$(ENV_ROOTDIR)" \
+	KERNEL_BUILDDIR="$(KERNEL_BUILDDIR)" \
+	MAKEFILE="$(PLATFORM_BASEDIR)/Makefile.connection" \
+	SRCDIR="projects/vm-linux/camkes-linux-artifacts/camkes-linux-modules/camkes-connector-modules/connection" \
+	IMGDIR="$(DEST_IMAGEDIR)" \
+	./scripts/build_linux_modules.sh "$(COMMAND)"

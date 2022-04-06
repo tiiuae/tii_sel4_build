@@ -122,9 +122,6 @@ BUILDDIR_ABSPATH="$(realpath "${BUILDDIR}")"
 SRCDIR_ABSPATH="$(realpath "${SRCDIR}")"
 IMGDIR_ABSPATH="$(realpath "${IMGDIR}")"
 
-if test -n "${CONNECTOR_MODULE_DIR}"; then
-CONNECTOR_MODULE_DIR_ABSPATH="$(realpath "${CONNECTOR_MODULE_DIR}")"
-fi
 
 
 # The -p argument ensures no
@@ -216,13 +213,6 @@ do_build()
   call_make -j"${JOBS}" "$@"
 }
 
-do_build_connector_module()
-{
-  pushd "${CONNECTOR_MODULE_DIR_ABSPATH}"
-  make -C "${BUILDDIR_ABSPATH}" M="$(pwd)" modules
-  popd
-}
-
 do_install_imgdir()
 {
   cp -v "${DEFCONFIG_FILE_DEST_ABSPATH}" "${IMGDIR_ABSPATH}/${CONFIG_FILE_BASENAME}"
@@ -249,14 +239,6 @@ do_install()
   fi
 }
 
-do_install_connector_module()
-{
-  # TODO: find out a non-hardcoded way
-  #
-  mkdir -p "${IMGDIR_ABSPATH}/linux-modules/lib/modules/5.16.0/connection"
-  cp -v "${CONNECTOR_MODULE_DIR_ABSPATH}/connection.ko" "${IMGDIR_ABSPATH}/linux-modules/lib/modules/5.16.0/connection/connection.ko"
-}
-
 
 # Handle script commands
 #
@@ -277,9 +259,6 @@ case "${SCRIPT_COMMAND}" in
   clean)
     call_make clean
     ;;
-  connector)
-    do_build_connector_module
-    do_install_connector_module
   dirclean)
     call_make dirclean
     ;;
