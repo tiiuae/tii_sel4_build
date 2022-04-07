@@ -226,6 +226,16 @@ do_install()
 {
   if test -d "${LINUX_BUILDDIR_ABSPATH}" && 
      test -f "${LINUX_BUILDDIR_ABSPATH}/arch/arm64/boot/Image"; then
+    do_install_imgdir
+  else
+    log_stderr "ERROR: install: Build directory doesn't exist, or it is empty. Please build target(s) first before install.\n"
+  fi
+}
+
+do_install_save_defconfig()
+{
+  if test -d "${LINUX_BUILDDIR_ABSPATH}" && 
+     test -f "${LINUX_BUILDDIR_ABSPATH}/arch/arm64/boot/Image"; then
     call_make savedefconfig
     save_defconfig_from_builddir
     do_install_imgdir

@@ -215,6 +215,16 @@ do_install()
 {
   if test -d "${UBOOT_BUILDDIR_ABSPATH}" && 
      test -f "${UBOOT_BUILDDIR_ABSPATH}/u-boot.bin"; then
+    do_install_imgdir
+  else
+    log_stderr "ERROR: install: Build directory doesn't exist, or it is empty. Please build target(s) first before install.\n"
+  fi
+}
+
+do_install_save_defconfig()
+{
+  if test -d "${UBOOT_BUILDDIR_ABSPATH}" && 
+     test -f "${UBOOT_BUILDDIR_ABSPATH}/u-boot.bin"; then
     call_make savedefconfig
     save_defconfig_from_builddir
     do_install_imgdir
