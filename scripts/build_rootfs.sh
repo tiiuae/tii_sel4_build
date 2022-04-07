@@ -2,7 +2,7 @@
 
 set -eE
 
-REQUIRED_ENV_VARS="CROSS_COMPILE ARCH WORKSPACE_PATH ENV_ROOTDIR CONFIG SDK_CONFIG BUILDDIR SRCDIR IMGDIR LINUX_KERNEL_VERSION"
+REQUIRED_ENV_VARS="ARCH BR_CONFIG BR_BUILDDIR BR_SDK_CONFIG BR_SRCDIR CROSS_COMPILE DEST_IMGDIR ENV_ROOTDIR WORKSPACE_PATH"
 
 
 # Crude logging functions
@@ -118,9 +118,9 @@ fi
 # Configure file paths and misc stuff
 # for the commands to use
 #
-BUILDDIR_ABSPATH="$(realpath "${BUILDDIR}")"
-SRCDIR_ABSPATH="$(realpath "${SRCDIR}")"
-IMGDIR_ABSPATH="$(realpath "${IMGDIR}")"
+BR_BUILDDIR_ABSPATH="$(realpath "${BR_BUILDDIR}")"
+BR_SRCDIR_ABSPATH="$(realpath "${BR_SRCDIR}")"
+DEST_IMGDIR_ABSPATH="$(realpath "${DEST_IMGDIR}")"
 
 
 # The -p argument ensures no
@@ -131,48 +131,48 @@ IMGDIR_ABSPATH="$(realpath "${IMGDIR}")"
 # to avoid any hairy/repetitive 
 # logic further down.
 #
-mkdir -p "${BUILDDIR_ABSPATH}"
+mkdir -p "${BR_BUILDDIR_ABSPATH}"
 
-CONFIG_FILE_SRC_ABSPATH="$(realpath "${CONFIG}")"
-CONFIG_FILE_SRC_BASENAME="$(basename "${CONFIG_FILE_SRC_ABSPATH}")"
-CONFIG_FILE_DEST_ABSPATH="$(realpath "${BUILDDIR_ABSPATH}/${CONFIG_FILE_SRC_BASENAME}")"
-#SDK_CONFIG_FILE_SRC_ABSPATH="$(realpath "${SDK_CONFIG}")"
-#SDK_CONFIG_FILE_DEST_ABSPATH="$(realpath "${BUILDDIR_ABSPATH}")/$(basename "${SDK_CONFIG_FILE_SRC_ABSPATH}")"
+BR_CONFIG_SRC_ABSPATH="$(realpath "${BR_CONFIG}")"
+BR_CONFIG_BASENAME="$(basename "${BR_CONFIG_SRC_ABSPATH}")"
+BR_CONFIG_DEST_ABSPATH="$(realpath "${BR_BUILDDIR_ABSPATH}/${BR_CONFIG_BASENAME}")"
+#SDK_CONFIG_FILE_SRC_ABSPATH="$(realpath "${BUILDROOT_SDK_CONFIG}")"
+#SDK_CONFIG_FILE_DEST_ABSPATH="$(realpath "${BR_BUILDDIR_ABSPATH}")/$(basename "${SDK_CONFIG_FILE_SRC_ABSPATH}")"
 
 
 call_make()
 {
-  make O="${BUILDDIR_ABSPATH}" "$@"
+  make O="${BR_BUILDDIR_ABSPATH}" "$@"
 }
 
-src_config_to_builddir()
+install_defconfig_to_builddir()
 {
-  cp -v "${CONFIG_FILE_SRC_ABSPATH}" "${CONFIG_FILE_DEST_ABSPATH}"
+  cp -v "${BR_CONFIG_SRC_ABSPATH}" "${BR_CONFIG_DEST_ABSPATH}"
 }
 
-save_config_from_builddir()
+save_defconfig_from_builddir()
 {
-  cp -v "${CONFIG_FILE_DEST_ABSPATH}" "${CONFIG_FILE_SRC_ABSPATH}"
+  cp -v "${BR_CONFIG_DEST_ABSPATH}" "${BR_CONFIG_SRC_ABSPATH}"
 }
 
 check_install_defconfig()
 {
-  if ! test -f "${CONFIG_FILE_DEST_ABSPATH}"; then
-    src_config_to_builddir
-    call_make BR2_DEFCONFIG="${CONFIG_FILE_DEST_ABSPATH}" defconfig
+  if ! test -f "${BR_CONFIG_DEST_ABSPATH}"; then
+    install_defconfig_to_builddir
+    call_make BR2_DEFCONFIG="${BR_CONFIG_DEST_ABSPATH}" defconfig
   fi
 }
 
 do_install_defconfig()
 {
-  src_config_to_builddir
-  call_make BR2_DEFCONFIG="${CONFIG_FILE_DEST_ABSPATH}" defconfig
+  install_defconfig_to_builddir
+  call_make BR2_DEFCONFIG="${BR_CONFIG_DEST_ABSPATH}" defconfig
 }
 
 do_build()
 {
-  if test -d "${BUILDDIR_ABSPATH}" && 
-     test -n "$(ls -A "${BUILDDIR_ABSPATH}/images" 2>/dev/null)"; then
+  if test -d "${BR_BUILDDIR_ABSPATH}" && 
+     test -n "$(ls -A "${BR_BUILDDIR_ABSPATH}/images" 2>/dev/null)"; then
 
      log_stdout "Build directory contains built target(s).\n"
      
@@ -210,17 +210,17 @@ do_build()
 
 do_install_imgdir()
 {
-  cp -v "${CONFIG_FILE_DEST_ABSPATH}" "${IMGDIR_ABSPATH}/${CONFIG_FILE_SRC_BASENAME}"
-  cp -v "${BUILDDIR_ABSPATH}/images/rootfs.cpio.gz" "${IMGDIR_ABSPATH}/rootfs.cpio.gz"
-  rsync -avP --delete "${BUILDDIR_ABSPATH}/images/" "${IMGDIR_ABSPATH}/buildroot-images"
+  cp -v "${BR_CONFIG_DEST_ABSPATH}" "${BR_CONFIG_SRC_ABSPATH}"
+  cp -v "${BR_BUILDDIR_ABSPATH}/images/rootfs.cpio.gz" "${DEST_IMGDIR_ABSPATH}/rootfs.cpio.gz"
+  rsync -avP --delete "${BR_BUILDDIR_ABSPATH}/images/" "${DEST_IMGDIR_ABSPATH}/buildroot-images"
 }
 
 do_install()
 {
-  if test -d "${BUILDDIR_ABSPATH}" && 
-     test -n "$(ls -A "${BUILDDIR_ABSPATH}/images" 2>/dev/null)"; then
+  if test -d "${BR_BUILDDIR_ABSPATH}" && 
+     test -n "$(ls -A "${BR_BUILDDIR_ABSPATH}/images" 2>/dev/null)"; then
     call_make savedefconfig
-    save_config_from_builddir
+    save_defconfig_from_builddir
     do_install_imgdir
   else
     log_stderr "ERROR: install: Build directory doesn't exist, or it is empty. Please build target(s) first before install.\n"
@@ -230,7 +230,7 @@ do_install()
 
 # Handle script commands
 #
-cd "${SRCDIR_ABSPATH}"
+cd "${BR_SRCDIR_ABSPATH}"
 check_install_defconfig
 export ARCH="${ARCH}"
 #export CROSS_COMPILE="${CROSS_COMPILE}"
@@ -238,8 +238,8 @@ export ARCH="${ARCH}"
 case "${SCRIPT_COMMAND}" in
   all)
     do_build all
-    #do_build all V=1 | tee -a "${BUILDDIR_ABSPATH}/buildlog_$(date +%F_%H-%M-%S.log)"
-    do_install_imgdir
+    #do_build all V=1 | tee -a "${BR_BUILDDIR_ABSPATH}/buildlog_$(date +%F_%H-%M-%S.log)"
+    do_install
     ;;
   build)
     do_build all
@@ -264,32 +264,32 @@ case "${SCRIPT_COMMAND}" in
     ;;
   savedefconfig)
     call_make savedefconfig
-    save_config_from_builddir
+    save_defconfig_from_builddir
     ;;
   shell)
     exec env \
-        BUILDDIR="${BUILDDIR_ABSPATH}" \
-        SRCDIR="${SRCDIR_ABSPATH}" \
-        IMGDIR="${IMGDIR_ABSPATH}" \
         ARCH="${ARCH}" \
+        BR_BUILDDIR="${BR_BUILDDIR_ABSPATH}" \
+        BR_CONFIG="${BR_CONFIG_SRC_ABSPATH}" \
+        BR_CONFIG_BASENAME="${BR_CONFIG_BASENAME}" \
+        BR_CONFIG_DEST_ABSPATH="${BR_CONFIG_DEST_ABSPATH}" \
+        BR_SRCDIR="${BR_SRCDIR_ABSPATH}" \
         CROSS_COMPILE="${CROSS_COMPILE}" \
-        CONFIG_FILE_SRC_ABSPATH="${CONFIG_FILE_SRC_ABSPATH}" \
-        CONFIG_FILE_SRC_BASENAME="${CONFIG_FILE_SRC_BASENAME}" \
-        CONFIG_FILE_DEST_ABSPATH="${CONFIG_FILE_DEST_ABSPATH}" \
-        O="${BUILDDIR_ABSPATH}" \
+        DEST_IMGDIR="${DEST_IMGDIR_ABSPATH}" \
+        O="${BR_BUILDDIR_ABSPATH}" \
         /bin/bash
     ;;
   *)
     exec env \
-        BUILDDIR="${BUILDDIR_ABSPATH}" \
-        SRCDIR="${SRCDIR_ABSPATH}" \
-        IMGDIR="${IMGDIR_ABSPATH}" \
         ARCH="${ARCH}" \
+        BR_BUILDDIR="${BR_BUILDDIR_ABSPATH}" \
+        BR_CONFIG="${BR_CONFIG_SRC_ABSPATH}" \
+        BR_CONFIG_BASENAME="${BR_CONFIG_BASENAME}" \
+        BR_CONFIG_DEST_ABSPATH="${BR_CONFIG_DEST_ABSPATH}" \
+        BR_SRCDIR="${BR_SRCDIR_ABSPATH}" \
         CROSS_COMPILE="${CROSS_COMPILE}" \
-        CONFIG_FILE_SRC_ABSPATH="${CONFIG_FILE_SRC_ABSPATH}" \
-        CONFIG_FILE_SRC_BASENAME="${CONFIG_FILE_SRC_BASENAME}" \
-        CONFIG_FILE_DEST_ABSPATH="${CONFIG_FILE_DEST_ABSPATH}" \
-        O="${BUILDDIR_ABSPATH}" \
+        DEST_IMGDIR="${DEST_IMGDIR_ABSPATH}" \
+        O="${BR_BUILDDIR_ABSPATH}" \
         /bin/bash -c "${SCRIPT_COMMAND} $@"
     ;;
 esac

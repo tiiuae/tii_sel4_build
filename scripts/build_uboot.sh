@@ -2,7 +2,7 @@
 
 set -eE
 
-REQUIRED_ENV_VARS="CROSS_COMPILE ARCH WORKSPACE_PATH ENV_ROOTDIR CONFIG BUILDDIR SRCDIR IMGDIR"
+REQUIRED_ENV_VARS="ARCH CROSS_COMPILE DEST_IMGDIR ENV_ROOTDIR UBOOT_CONFIG UBOOT_BUILDDIR UBOOT_SRCDIR WORKSPACE_PATH"
 
 
 # Crude logging functions
@@ -115,12 +115,13 @@ else
 fi
 
 
+
 # Configure file paths and misc stuff
 # for the commands to use
 #
-BUILDDIR_ABSPATH="$(realpath "${BUILDDIR}")"
-SRCDIR_ABSPATH="$(realpath "${SRCDIR}")"
-IMGDIR_ABSPATH="$(realpath "${IMGDIR}")"
+UBOOT_BUILDDIR_ABSPATH="$(realpath "${UBOOT_BUILDDIR}")"
+UBOOT_SRCDIR_ABSPATH="$(realpath "${UBOOT_SRCDIR}")"
+DEST_IMGDIR_ABSPATH="$(realpath "${DEST_IMGDIR}")"
 
 # The -p argument ensures no
 # error if the directory exists
@@ -130,46 +131,46 @@ IMGDIR_ABSPATH="$(realpath "${IMGDIR}")"
 # to avoid any hairy/repetitive 
 # logic further down.
 #
-mkdir -p "${BUILDDIR_ABSPATH}"
+mkdir -p "${UBOOT_BUILDDIR_ABSPATH}"
 
-CONFIG_FILE_SRC_ABSPATH="$(realpath "${CONFIG}")"
-CONFIG_FILE_SRC_BASENAME="$(basename "${CONFIG_FILE_SRC_ABSPATH}")"
-CONFIG_FILE_DEST_ABSPATH="$(realpath "${BUILDDIR_ABSPATH}/.config")"
-
+UBOOT_CONFIG_SRC_ABSPATH="$(realpath "${UBOOT_CONFIG}")"
+UBOOT_CONFIG_SRC_BASENAME="$(basename "${UBOOT_CONFIG_SRC_ABSPATH}")"
+UBOOT_CONFIG_DEST_ABSPATH="$(realpath "${UBOOT_BUILDDIR_ABSPATH}/.config")"
+UBOOT_DEFCONFIG_DEST_ABSPATH="$(realpath "${UBOOT_BUILDDIR_ABSPATH}/defconfig")"
 
 call_make()
 {
-  make O="${BUILDDIR_ABSPATH}" "$@"
+  make O="${UBOOT_BUILDDIR_ABSPATH}" "$@"
 }
 
-install_config_to_builddir()
+install_defconfig_to_builddir()
 {
-  cp -v "${CONFIG_FILE_SRC_ABSPATH}" "${CONFIG_FILE_DEST_ABSPATH}"
+  cp -v "${UBOOT_CONFIG_SRC_ABSPATH}" "${UBOOT_CONFIG_DEST_ABSPATH}"
 }
 
-save_config_from_builddir()
+save_defconfig_from_builddir()
 {
-  cp -v "${CONFIG_FILE_DEST_ABSPATH}" "${CONFIG_FILE_SRC_ABSPATH}"
+  cp -v "${UBOOT_DEFCONFIG_DEST_ABSPATH}" "${UBOOT_CONFIG_SRC_ABSPATH}"
 }
 
 check_install_defconfig()
 {
-  if ! test -f "${CONFIG_FILE_DEST_ABSPATH}"; then
-    install_config_to_builddir
+  if ! test -f "${UBOOT_CONFIG_DEST_ABSPATH}"; then
+    install_defconfig_to_builddir
     call_make olddefconfig
   fi
 }
 
 do_install_defconfig()
 {
-  install_config_to_builddir
+  install_defconfig_to_builddir
   call_make olddefconfig
 }
 
 do_build()
 {
-  if test -d "${BUILDDIR_ABSPATH}" && 
-     test -f "${BUILDDIR_ABSPATH}/u-boot.bin"; then
+  if test -d "${UBOOT_BUILDDIR_ABSPATH}" && 
+     test -f "${UBOOT_BUILDDIR_ABSPATH}/u-boot.bin"; then
 
      log_stdout "Build directory contains built target(s).\n"
      
@@ -207,16 +208,15 @@ do_build()
 
 do_install_imgdir()
 {
-  cp -v "${CONFIG_FILE_DEST_ABSPATH}" "${IMGDIR_ABSPATH}/${CONFIG_FILE_BASENAME}"
-  cp -v "${BUILDDIR_ABSPATH}/u-boot.bin" "${IMGDIR_ABSPATH}/u-boot.bin"
+  cp -v "${UBOOT_BUILDDIR_ABSPATH}/u-boot.bin" "${DEST_IMGDIR_ABSPATH}/u-boot.bin"
 }
 
 do_install()
 {
-  if test -d "${BUILDDIR_ABSPATH}" && 
-     test -f "${BUILDDIR_ABSPATH}/u-boot.bin"; then
+  if test -d "${UBOOT_BUILDDIR_ABSPATH}" && 
+     test -f "${UBOOT_BUILDDIR_ABSPATH}/u-boot.bin"; then
     call_make savedefconfig
-    save_config_from_builddir
+    save_defconfig_from_builddir
     do_install_imgdir
   else
     log_stderr "ERROR: install: Build directory doesn't exist, or it is empty. Please build target(s) first before install.\n"
@@ -227,7 +227,7 @@ do_install()
 # Then do the necessary actions
 # for desired target(s)
 #
-cd "${SRCDIR_ABSPATH}"
+cd "${UBOOT_SRCDIR_ABSPATH}"
 check_install_defconfig
 export ARCH="${ARCH}"
 export CROSS_COMPILE="${CROSS_COMPILE}"
@@ -235,7 +235,7 @@ export CROSS_COMPILE="${CROSS_COMPILE}"
 case "${SCRIPT_COMMAND}" in
   all)
     do_build all
-    do_install_imgdir
+    do_install
     ;;
   build)
     do_build all
@@ -257,32 +257,32 @@ case "${SCRIPT_COMMAND}" in
     ;;
   savedefconfig)
     call_make savedefconfig
-    save_config_from_builddir
+    save_defconfig_from_builddir
     ;;
   shell)
     exec env \
-        BUILDDIR="${BUILDDIR_ABSPATH}" \
-        SRCDIR="${SRCDIR_ABSPATH}" \
-        IMGDIR="${IMGDIR_ABSPATH}" \
+        BUILDDIR="${UBOOT_BUILDDIR_ABSPATH}" \
+        SRCDIR="${UBOOT_SRCDIR_ABSPATH}" \
+        IMGDIR="${DEST_IMGDIR_ABSPATH}" \
         ARCH="${ARCH}" \
         CROSS_COMPILE="${CROSS_COMPILE}" \
-        CONFIG_FILE_SRC_ABSPATH="${CONFIG_FILE_SRC_ABSPATH}" \
-        CONFIG_FILE_SRC_BASENAME="${CONFIG_FILE_SRC_BASENAME}" \
-        CONFIG_FILE_DEST_ABSPATH="${CONFIG_FILE_DEST_ABSPATH}" \
-        O="${BUILDDIR_ABSPATH}" \
+        UBOOT_CONFIG_SRC_ABSPATH="${UBOOT_CONFIG_SRC_ABSPATH}" \
+        UBOOT_CONFIG_SRC_BASENAME="${UBOOT_CONFIG_SRC_BASENAME}" \
+        UBOOT_CONFIG_DEST_ABSPATH="${UBOOT_CONFIG_DEST_ABSPATH}" \
+        O="${UBOOT_BUILDDIR_ABSPATH}" \
         /bin/bash
     ;;
   *)
     exec env \
-        BUILDDIR="${BUILDDIR_ABSPATH}" \
-        SRCDIR="${SRCDIR_ABSPATH}" \
-        IMGDIR="${IMGDIR_ABSPATH}" \
+        BUILDDIR="${UBOOT_BUILDDIR_ABSPATH}" \
+        SRCDIR="${UBOOT_SRCDIR_ABSPATH}" \
+        IMGDIR="${DEST_IMGDIR_ABSPATH}" \
         ARCH="${ARCH}" \
         CROSS_COMPILE="${CROSS_COMPILE}" \
-        CONFIG_FILE_SRC_ABSPATH="${CONFIG_FILE_SRC_ABSPATH}" \
-        CONFIG_FILE_SRC_BASENAME="${CONFIG_FILE_SRC_BASENAME}" \
-        CONFIG_FILE_DEST_ABSPATH="${CONFIG_FILE_DEST_ABSPATH}" \
-        O="${BUILDDIR_ABSPATH}" \
+        UBOOT_CONFIG_SRC_ABSPATH="${UBOOT_CONFIG_SRC_ABSPATH}" \
+        UBOOT_CONFIG_SRC_BASENAME="${UBOOT_CONFIG_SRC_BASENAME}" \
+        UBOOT_CONFIG_DEST_ABSPATH="${UBOOT_CONFIG_DEST_ABSPATH}" \
+        O="${UBOOT_BUILDDIR_ABSPATH}" \
         /bin/bash -c "${SCRIPT_COMMAND} $@"
     ;;
 esac

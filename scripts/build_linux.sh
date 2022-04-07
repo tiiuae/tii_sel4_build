@@ -2,7 +2,7 @@
 
 set -eE
 
-REQUIRED_ENV_VARS="CROSS_COMPILE ARCH WORKSPACE_PATH ENV_ROOTDIR CONFIG BUILDDIR SRCDIR IMGDIR"
+REQUIRED_ENV_VARS="ARCH CROSS_COMPILE DEST_IMGDIR ENV_ROOTDIR LINUX_CONFIG LINUX_BUILDDIR LINUX_SRCDIR WORKSPACE_PATH"
 
 
 # Crude logging functions
@@ -118,9 +118,9 @@ fi
 # Configure file paths and misc stuff
 # for the commands to use
 #
-BUILDDIR_ABSPATH="$(realpath "${BUILDDIR}")"
-SRCDIR_ABSPATH="$(realpath "${SRCDIR}")"
-IMGDIR_ABSPATH="$(realpath "${IMGDIR}")"
+LINUX_BUILDDIR_ABSPATH="$(realpath "${LINUX_BUILDDIR}")"
+LINUX_SRCDIR_ABSPATH="$(realpath "${LINUX_SRCDIR}")"
+DEST_IMGDIR_ABSPATH="$(realpath "${DEST_IMGDIR}")"
 
 
 
@@ -132,52 +132,47 @@ IMGDIR_ABSPATH="$(realpath "${IMGDIR}")"
 # to avoid any hairy/repetitive 
 # logic further down.
 #
-mkdir -p "${BUILDDIR_ABSPATH}"
+mkdir -p "${LINUX_BUILDDIR_ABSPATH}"
 
-CONFIG_FILE_SRC_ABSPATH="$(realpath "${CONFIG}")"
-CONFIG_FILE_SRC_BASENAME="$(basename "${CONFIG_FILE_SRC_ABSPATH}")"
-CONFIG_FILE_DEST_ABSPATH="$(realpath "${BUILDDIR_ABSPATH}/.config")"
-DEFCONFIG_FILE_DEST_ABSPATH="$(realpath "${BUILDDIR_ABSPATH}/defconfig")"
+LINUX_CONFIG_SRC_ABSPATH="$(realpath "${LINUX_CONFIG}")"
+LINUX_CONFIG_SRC_BASENAME="$(basename "${LINUX_CONFIG_SRC_ABSPATH}")"
+LINUX_CONFIG_DEST_ABSPATH="$(realpath "${LINUX_BUILDDIR_ABSPATH}/.config")"
+LINUX_DEFCONFIG_DEST_ABSPATH="$(realpath "${LINUX_BUILDDIR_ABSPATH}/defconfig")"
 
 
 call_make()
 {
-  make O="${BUILDDIR_ABSPATH}" "$@"
+  make O="${LINUX_BUILDDIR_ABSPATH}" "$@"
 }
 
-install_config_to_builddir()
+install_defconfig_to_builddir()
 {
-  cp -v "${CONFIG_FILE_SRC_ABSPATH}" "${CONFIG_FILE_DEST_ABSPATH}"
-}
-
-save_config_from_builddir()
-{
-  cp -v "${CONFIG_FILE_DEST_ABSPATH}" "${CONFIG_FILE_SRC_ABSPATH}"
+  cp -v "${LINUX_CONFIG_SRC_ABSPATH}" "${LINUX_CONFIG_DEST_ABSPATH}"
 }
 
 save_defconfig_from_builddir()
 {
-  cp -v "${DEFCONFIG_FILE_DEST_ABSPATH}" "${CONFIG_FILE_SRC_ABSPATH}"
+  cp -v "${LINUX_DEFCONFIG_DEST_ABSPATH}" "${LINUX_CONFIG_SRC_ABSPATH}"
 }
 
 check_install_defconfig()
 {
-  if ! test -f "${CONFIG_FILE_DEST_ABSPATH}"; then
-    install_config_to_builddir
+  if ! test -f "${LINUX_CONFIG_DEST_ABSPATH}"; then
+    install_defconfig_to_builddir
     call_make olddefconfig
   fi
 }
 
 do_install_defconfig()
 {
-  install_config_to_builddir
+  install_defconfig_to_builddir
   call_make olddefconfig
 }
 
 do_build()
 {
-  if test -d "${BUILDDIR_ABSPATH}" && 
-     test -f "${BUILDDIR_ABSPATH}/arch/arm64/boot/Image"; then
+  if test -d "${LINUX_BUILDDIR_ABSPATH}" && 
+     test -f "${LINUX_BUILDDIR_ABSPATH}/arch/arm64/boot/Image"; then
 
      log_stdout "Build directory contains built target(s).\n"
      
@@ -215,22 +210,22 @@ do_build()
 
 do_install_imgdir()
 {
-  cp -v "${DEFCONFIG_FILE_DEST_ABSPATH}" "${IMGDIR_ABSPATH}/${CONFIG_FILE_BASENAME}"
-  cp -v "${BUILDDIR_ABSPATH}/arch/arm64/boot/Image" "${IMGDIR_ABSPATH}/linux"
-  cp -v "${BUILDDIR_ABSPATH}/arch/arm64/boot/dts/broadcom/bcm2711-rpi-4-b.dtb" "${IMGDIR_ABSPATH}/linux-dtb"
-  cp -v "${BUILDDIR_ABSPATH}/Module.symvers" "${IMGDIR_ABSPATH}/linux-symvers"
-  cp -v "${BUILDDIR_ABSPATH}/System.map" "${IMGDIR_ABSPATH}/linux-system-map"
-  "${BUILDDIR_ABSPATH}/scripts/dtc/dtc" -I dtb -O dts -o "${IMGDIR_ABSPATH}/linux.dts" "${IMGDIR_ABSPATH}/linux-dtb"
+  #cp -v "${LINUX_DEFCONFIG_DEST_ABSPATH}" "${LINUX_CONFIG_SRC_ABSPATH}"
+  cp -v "${LINUX_BUILDDIR_ABSPATH}/arch/arm64/boot/Image" "${DEST_IMGDIR_ABSPATH}/linux"
+  cp -v "${LINUX_BUILDDIR_ABSPATH}/arch/arm64/boot/dts/broadcom/bcm2711-rpi-4-b.dtb" "${DEST_IMGDIR_ABSPATH}/linux-dtb"
+  cp -v "${LINUX_BUILDDIR_ABSPATH}/Module.symvers" "${DEST_IMGDIR_ABSPATH}/linux-symvers"
+  cp -v "${LINUX_BUILDDIR_ABSPATH}/System.map" "${DEST_IMGDIR_ABSPATH}/linux-system-map"
+  "${LINUX_BUILDDIR_ABSPATH}/scripts/dtc/dtc" -I dtb -O dts -o "${DEST_IMGDIR_ABSPATH}/linux.dts" "${DEST_IMGDIR_ABSPATH}/linux-dtb"
   TMPDIR=$(mktemp -d)
   call_make INSTALL_MOD_PATH="${TMPDIR}" modules_install
-  rsync -avP --delete --no-links "${TMPDIR}/" "${IMGDIR_ABSPATH}/linux-modules"
+  rsync -avP --delete --no-links "${TMPDIR}/" "${DEST_IMGDIR_ABSPATH}/linux-modules"
   rm -rf "${TMPDIR}"
 }
 
 do_install()
 {
-  if test -d "${BUILDDIR_ABSPATH}" && 
-     test -f "${BUILDDIR_ABSPATH}/arch/arm64/boot/Image"; then
+  if test -d "${LINUX_BUILDDIR_ABSPATH}" && 
+     test -f "${LINUX_BUILDDIR_ABSPATH}/arch/arm64/boot/Image"; then
     call_make savedefconfig
     save_defconfig_from_builddir
     do_install_imgdir
@@ -242,7 +237,7 @@ do_install()
 
 # Handle script commands
 #
-cd "${SRCDIR_ABSPATH}"
+cd "${LINUX_SRCDIR_ABSPATH}"
 check_install_defconfig
 export ARCH="${ARCH}"
 export CROSS_COMPILE="${CROSS_COMPILE}"
@@ -250,11 +245,11 @@ export CROSS_COMPILE="${CROSS_COMPILE}"
 
 case "${SCRIPT_COMMAND}" in
   all)
-    call_make all
+    do_build all
     do_install
     ;;
   build)
-    call_make all
+    do_build all
     ;;
   clean)
     call_make clean
@@ -286,28 +281,28 @@ case "${SCRIPT_COMMAND}" in
     ;;
   shell)
     exec env \
-        BUILDDIR="${BUILDDIR_ABSPATH}" \
-        SRCDIR="${SRCDIR_ABSPATH}" \
-        IMGDIR="${IMGDIR_ABSPATH}" \
         ARCH="${ARCH}" \
         CROSS_COMPILE="${CROSS_COMPILE}" \
-        CONFIG_FILE_SRC_ABSPATH="${CONFIG_FILE_SRC_ABSPATH}" \
-        CONFIG_FILE_SRC_BASENAME="${CONFIG_FILE_SRC_BASENAME}" \
-        CONFIG_FILE_DEST_ABSPATH="${CONFIG_FILE_DEST_ABSPATH}" \
-        O="${BUILDDIR_ABSPATH}" \
+        DEST_IMGDIR="${DEST_IMGDIR_ABSPATH}" \
+        LINUX_BUILDDIR="${LINUX_BUILDDIR_ABSPATH}" \
+        LINUX_CONFIG="${LINUX_CONFIG_SRC_ABSPATH}" \
+        LINUX_CONFIG_SRC_BASENAME="${LINUX_CONFIG_SRC_BASENAME}" \
+        LINUX_CONFIG_DEST_ABSPATH="${LINUX_CONFIG_DEST_ABSPATH}" \
+        LINUX_SRCDIR="${LINUX_SRCDIR_ABSPATH}" \
+        O="${LINUX_BUILDDIR_ABSPATH}" \
         /bin/bash
     ;;
   *)
     exec env \
-        BUILDDIR="${BUILDDIR_ABSPATH}" \
-        SRCDIR="${SRCDIR_ABSPATH}" \
-        IMGDIR="${IMGDIR_ABSPATH}" \
         ARCH="${ARCH}" \
         CROSS_COMPILE="${CROSS_COMPILE}" \
-        CONFIG_FILE_SRC_ABSPATH="${CONFIG_FILE_SRC_ABSPATH}" \
-        CONFIG_FILE_SRC_BASENAME="${CONFIG_FILE_SRC_BASENAME}" \
-        CONFIG_FILE_DEST_ABSPATH="${CONFIG_FILE_DEST_ABSPATH}" \
-        O="${BUILDDIR_ABSPATH}" \
+        DEST_IMGDIR="${DEST_IMGDIR_ABSPATH}" \
+        LINUX_BUILDDIR="${LINUX_BUILDDIR_ABSPATH}" \
+        LINUX_CONFIG="${LINUX_CONFIG_SRC_ABSPATH}" \
+        LINUX_CONFIG_SRC_BASENAME="${LINUX_CONFIG_SRC_BASENAME}" \
+        LINUX_CONFIG_DEST_ABSPATH="${LINUX_CONFIG_DEST_ABSPATH}" \
+        LINUX_SRCDIR="${LINUX_SRCDIR_ABSPATH}" \
+        O="${LINUX_BUILDDIR_ABSPATH}" \
         /bin/bash -c "${SCRIPT_COMMAND} $@"
     ;;
 esac

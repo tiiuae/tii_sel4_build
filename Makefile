@@ -18,20 +18,22 @@ endif
 
 PLATFORM_BASEDIR := tii_sel4_build/images/$(PLATFORM)
 
-BUILDROOT_CONFIG := $(PLATFORM_BASEDIR)/buildroot-config
-BUILDROOT_SDK_CONFIG := $(PLATFORM_BASEDIR)/buildroot-sdk-config
-KERNEL_CONFIG := $(PLATFORM_BASEDIR)/linux-config
-UBOOT_CONFIG := $(PLATFORM_BASEDIR)/uboot-config
+BR_CONFIG := projects/camkes-vm-images/rpi4/buildroot/buildroot-config
+BR_SDK_CONFIG := projects/camkes-vm-images/rpi4/buildroot/buildroot-sdk-config
+LINUX_CONFIG := projects/camkes-vm-images/rpi4/linux_configs/config
+UBOOT_CONFIG := projects/camkes-vm-images/rpi4/uboot/uboot-config
 
-BUILDROOT_BUILDDIR := buildroot-build
-KERNEL_BUILDDIR := linux-build
-UBOOT_BUILDDIR := uboot-build
+BUILD_BASEDIR := guest_component_builds
 
-BUILDROOT_SRCDIR := projects/buildroot
-KERNEL_SRCDIR := projects/torvalds/linux
+BR_BUILDDIR := $(BUILD_BASEDIR)/buildroot-build
+LINUX_BUILDDIR := $(BUILD_BASEDIR)/linux-build
+UBOOT_BUILDDIR := $(BUILD_BASEDIR)/uboot-build
+
+BR_SRCDIR := projects/buildroot
+LINUX_SRCDIR := projects/torvalds/linux
 UBOOT_SRCDIR := projects/uboot
 
-KERNEL_VERSION := $(shell make -C $(KERNEL_SRCDIR) -s kernelversion)
+#KERNEL_VERSION := $(shell make -C $(LINUX_SRCDIR) -s kernelversion)
 DEST_IMAGEDIR := projects/camkes-vm-images/$(PLATFORM)
 
 .PHONY: docker shell build_uboot build_rootfs build_linux
@@ -97,47 +99,46 @@ shell: .config
 	./docker/enter_container.sh
 
 build_uboot: .config
-	CROSS_COMPILE="$(CROSS_COMPILE)" \
 	ARCH=arm \
-	WORKSPACE_PATH="$(WORKSPACE_PATH)" \
+	CROSS_COMPILE="$(CROSS_COMPILE)" \
+	DEST_IMGDIR="$(DEST_IMAGEDIR)" \
 	ENV_ROOTDIR="$(ENV_ROOTDIR)" \
-	CONFIG="$(UBOOT_CONFIG)" \
-	BUILDDIR="$(UBOOT_BUILDDIR)" \
-	SRCDIR="$(UBOOT_SRCDIR)" \
-	IMGDIR="$(DEST_IMAGEDIR)" \
+	UBOOT_CONFIG="$(UBOOT_CONFIG)" \
+	UBOOT_BUILDDIR="$(UBOOT_BUILDDIR)" \
+	UBOOT_SRCDIR="$(UBOOT_SRCDIR)" \
+	WORKSPACE_PATH="$(WORKSPACE_PATH)" \
 	./scripts/build_uboot.sh "$(COMMAND)"
 
 build_rootfs: .config
-	CROSS_COMPILE="$(CROSS_COMPILE)" \
 	ARCH=arm64 \
-	WORKSPACE_PATH="$(WORKSPACE_PATH)" \
+	BR_BUILDDIR="$(BR_BUILDDIR)" \
+	BR_CONFIG="$(BR_CONFIG)" \
+	BR_SRCDIR="$(BR_SRCDIR)" \
+	BR_SDK_CONFIG="$(BR_SDK_CONFIG)" \
+	CROSS_COMPILE="$(CROSS_COMPILE)" \
+	DEST_IMGDIR="$(DEST_IMAGEDIR)" \
 	ENV_ROOTDIR="$(ENV_ROOTDIR)" \
-	CONFIG="$(BUILDROOT_CONFIG)" \
-	SDK_CONFIG="$(BUILDROOT_SDK_CONFIG)" \
-	BUILDDIR="$(BUILDROOT_BUILDDIR)" \
-	SRCDIR="$(BUILDROOT_SRCDIR)" \
-	IMGDIR="$(DEST_IMAGEDIR)" \
-	LINUX_KERNEL_VERSION="$(KERNEL_VERSION)" \
+	WORKSPACE_PATH="$(WORKSPACE_PATH)" \
 	./scripts/build_rootfs.sh "$(COMMAND)"
 
 build_linux: .config
-	CROSS_COMPILE="$(CROSS_COMPILE)" \
 	ARCH=arm64 \
-	WORKSPACE_PATH="$(WORKSPACE_PATH)" \
+	CROSS_COMPILE="$(CROSS_COMPILE)" \
+	DEST_IMGDIR="$(DEST_IMAGEDIR)" \
 	ENV_ROOTDIR="$(ENV_ROOTDIR)" \
-	CONFIG="$(KERNEL_CONFIG)" \
-	BUILDDIR="$(KERNEL_BUILDDIR)" \
-	SRCDIR="$(KERNEL_SRCDIR)" \
-	IMGDIR="$(DEST_IMAGEDIR)" \
+	LINUX_CONFIG="$(LINUX_CONFIG)" \
+	LINUX_BUILDDIR="$(LINUX_BUILDDIR)" \
+	LINUX_SRCDIR="$(LINUX_SRCDIR)" \
+	WORKSPACE_PATH="$(WORKSPACE_PATH)" \
 	./scripts/build_linux.sh "$(COMMAND)"
 
 build_modules: .config
-	CROSS_COMPILE="$(CROSS_COMPILE)" \
 	ARCH=arm64 \
-	WORKSPACE_PATH="$(WORKSPACE_PATH)" \
+	CROSS_COMPILE="$(CROSS_COMPILE)" \
+	DEST_IMGDIR="$(DEST_IMAGEDIR)" \
 	ENV_ROOTDIR="$(ENV_ROOTDIR)" \
-	KERNEL_BUILDDIR="$(KERNEL_BUILDDIR)" \
-	MAKEFILE="$(PLATFORM_BASEDIR)/Makefile.connection" \
-	SRCDIR="projects/vm-linux/camkes-linux-artifacts/camkes-linux-modules/camkes-connector-modules/connection" \
-	IMGDIR="$(DEST_IMAGEDIR)" \
+	LINUX_BUILDDIR="$(LINUX_BUILDDIR)" \
+	MODULE_MAKEFILE="projects/camkes-vm-images/rpi4/modules/Makefile.connection" \
+	MODULE_SRCDIR="projects/vm-linux/camkes-linux-artifacts/camkes-linux-modules/camkes-connector-modules/connection" \
+	WORKSPACE_PATH="$(WORKSPACE_PATH)" \
 	./scripts/build_linux_modules.sh "$(COMMAND)"

@@ -2,8 +2,7 @@
 
 set -eE
 
-REQUIRED_ENV_VARS="CROSS_COMPILE ARCH WORKSPACE_PATH ENV_ROOTDIR KERNEL_BUILDDIR MAKEFILE SRCDIR IMGDIR"
-
+REQUIRED_ENV_VARS="ARCH CROSS_COMPILE DEST_IMGDIR ENV_ROOTDIR LINUX_BUILDDIR MODULE_MAKEFILE MODULE_SRCDIR WORKSPACE_PATH"
 
 # Crude logging functions
 log_stdout()
@@ -115,42 +114,44 @@ else
 fi
 
 
+
 # Configure file paths and misc stuff
 # for the commands to use
 #
-KERNEL_BUILDDIR_ABSPATH="$(realpath "${KERNEL_BUILDDIR}")"
-SRCDIR_ABSPATH="$(realpath "${SRCDIR}")"
-IMGDIR_ABSPATH="$(realpath "${IMGDIR}")"
-MAKEFILE_ABSPATH="$(realpath "${MAKEFILE}")"
+LINUX_BUILDDIR_ABSPATH="$(realpath "${LINUX_BUILDDIR}")"
+MODULE_SRCDIR_ABSPATH="$(realpath "${MODULE_SRCDIR}")"
+DEST_IMGDIR_ABSPATH="$(realpath "${DEST_IMGDIR}")"
+MODULE_MAKEFILE_ABSPATH="$(realpath "${MODULE_MAKEFILE}")"
 
 
 call_make()
 {
-  make KERNEL_SRC="${KERNEL_BUILDDIR_ABSPATH}" "$@"
+  make KERNEL_SRC="${LINUX_BUILDDIR_ABSPATH}" "$@"
 }
 
 do_install_makefile()
 {
-  cp -v "${MAKEFILE_ABSPATH}" "${SRCDIR_ABSPATH}/Makefile"
+  cp -v "${MODULE_MAKEFILE_ABSPATH}" "${MODULE_SRCDIR_ABSPATH}/Makefile"
 }
 
 check_install_makefile()
 {
-  if ! test -f "${SRCDIR_ABSPATH}/Makefile"; then
+  if ! test -f "${MODULE_SRCDIR_ABSPATH}/Makefile"; then
     do_install_makefile
   fi
 }
 
 do_clean()
 {
-  pushd "${SRCDIR_ABSPATH}"
+  pushd "${MODULE_SRCDIR_ABSPATH}"
   call_make clean
   popd
 }
 
 do_build()
 {
-  pushd "${SRCDIR_ABSPATH}"
+  pushd "${MODULE_SRCDIR_ABSPATH}"
+  #if test -n "$(ls -A "${MODULE_SRCDIR_ABSPATH}/*.ko" 2>/dev/null)"
   if test -f "./connection.ko"; then
      call_make clean
   fi
@@ -161,8 +162,8 @@ do_build()
 
 do_install()
 {
-  pushd "${SRCDIR_ABSPATH}"
-  call_make INSTALL_MOD_PATH="${IMGDIR_ABSPATH}/linux-modules/" modules_install
+  pushd "${MODULE_SRCDIR_ABSPATH}"
+  call_make INSTALL_MOD_PATH="${DEST_IMGDIR_ABSPATH}/linux-modules/" modules_install
   popd
 }
 
@@ -190,22 +191,22 @@ case "${SCRIPT_COMMAND}" in
     ;;
   shell)
     exec env \
-        CROSS_COMPILE="${CROSS_COMPILE}" \
         ARCH="${ARCH}" \
-        KERNEL_BUILDDIR="${KERNEL_BUILDDIR_ABSPATH}" \
-        MAKEFILE="${MAKEFILE_ABSPATH}" \
-        SRCDIR="${SRCDIR_ABSPATH}" \
-        IMGDIR="${IMGDIR_ABSPATH}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        DEST_IMGDIR="${DEST_IMGDIR_ABSPATH}" \
+        LINUX_BUILDDIR="${LINUX_BUILDDIR_ABSPATH}" \
+        MODULE_MAKEFILE="${MODULE_MAKEFILE_ABSPATH}" \
+        MODULE_SRCDIR="${MODULE_SRCDIR_ABSPATH}" \
         /bin/bash
     ;;
   *)
     exec env \
-        CROSS_COMPILE="${CROSS_COMPILE}" \
         ARCH="${ARCH}" \
-        KERNEL_BUILDDIR="${KERNEL_BUILDDIR_ABSPATH}" \
-        MAKEFILE="${MAKEFILE_ABSPATH}" \
-        SRCDIR="${SRCDIR_ABSPATH}" \
-        IMGDIR="${IMGDIR_ABSPATH}" \
+        CROSS_COMPILE="${CROSS_COMPILE}" \
+        DEST_IMGDIR="${DEST_IMGDIR_ABSPATH}" \
+        LINUX_BUILDDIR="${LINUX_BUILDDIR_ABSPATH}" \
+        MODULE_MAKEFILE="${MODULE_MAKEFILE_ABSPATH}" \
+        MODULE_SRCDIR="${MODULE_SRCDIR_ABSPATH}" \
         /bin/bash -c "${SCRIPT_COMMAND} $@"
     ;;
 esac
