@@ -86,7 +86,7 @@ if head -n 1 < /proc/1/sched | grep -q 'init\|systemd'; then
   generate_env_file
   printf "%s=%s\n" "DOCKER_ENVFILE" "${WORKSPACE_PATH}/$(basename "${DOCKER_ENVFILE}")" >> "${DOCKER_ENVFILE}"
 
-  exec env DOCKER_IMAGE=tii_builder \
+  exec env DOCKER_IMAGE=linux \
        env WORKSPACE_DIR="${SCRIPT_CWD}" \
        env DOCKER_ENVFILE="${DOCKER_ENVFILE}" \
        "${DOCKER_DIR_ABSPATH}/enter_container.sh" "${WORKSPACE_PATH}/${SCRIPT_RELPATH}" $@
