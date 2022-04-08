@@ -1,24 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
 set -eE
 
-
-# Look for these first
-# in the environment
-# variables.
-#
-DOCKER_ENVFILE="${DOCKER_ENVFILE}"
-DOCKER_IMAGE="${DOCKER_IMAGE}"
-WORKSPACE_DIR="${WORKSPACE_DIR}"
-DOCKER_ARGS="${DOCKER_ARGS}"
 OTHER_ARGS=""
 
-
-# Then parse args. Passed
-# argument value overrides
-# the environment variable
+# Parse args. Passed argument value overrides the environment variable
 # value (if set).
-#
 while [ $# -gt 0 ]; do
   case "${1}" in
     -e|--envfile)
@@ -60,13 +47,10 @@ fi
 
 WORKSPACE_DIR=${WORKSPACE_DIR-$(pwd)}
 
-# The printf is a hack for getting
-# around the problem that parameter
-# expansion encloses the result in single
-# quotes, which wreaks havoc when inserted
-# to Docker run arguments. Printing the
-# the expansion result removes the quotes.
-#
+# The printf is a hack for getting around the problem that parameter
+# expansion encloses the result in single quotes, which wreaks havoc when
+# inserted to Docker run arguments. Printing the the expansion result removes
+# the quotes.
 
 set -- "${OTHER_ARGS}"
 
