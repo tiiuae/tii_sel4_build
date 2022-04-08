@@ -50,24 +50,15 @@ done
 
 
 # Validate input arguments.
-# Env file is optional,
-# Docker image name is required,
-# for workspace directory
-# default to current working
-# directory if nothing is given.
-#
-case "${DOCKER_IMAGE}" in
-  sel4_builder|yocto_builder|tii_builder)
-  ;;
-  *)
-    printf "%s: ERROR: Docker image name required (sel4_builder|yocto_builder|tii_builder)!\n" "$0" >&2;
+# DOCKER_ENVFILE is optional,
+# DOCKER_IMAGE is required,
+# WORKSPACE_DIR defaults to CWD
+if [ -z "${DOCKER_IMAGE}" ]; then
+    printf "%s: ERROR: Oh noes! Docker image empty :(\n" "$0" >&2;
     exit 1
-  ;;
-esac
-
-if test -z "${WORKSPACE_DIR}"; then
-  WORKSPACE_DIR="$(pwd)"
 fi
+
+WORKSPACE_DIR=${WORKSPACE_DIR-$(pwd)}
 
 # The printf is a hack for getting
 # around the problem that parameter

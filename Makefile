@@ -1,4 +1,12 @@
 
+# Docker variables
+DOCKER_BUILD_ARGS ?= \
+	--build-arg UID=$(shell id -u) --build-arg GID=$(shell id -g)
+
+docker-images := $(patsubst docker/Dockerfile.%, %, $(wildcard docker/Dockerfile.*))
+docker-targets := $(addprefix docker-,$(docker-images))
+shell-targets := $(addprefix shell-,$(docker-images))
+
 DOCKER_IMAGE :=
 ifeq ($(strip $(WORKSPACE_DIR)),)
 WORKSPACE_DIR := $(shell pwd)
@@ -36,7 +44,7 @@ UBOOT_SRCDIR := projects/uboot
 #KERNEL_VERSION := $(shell make -C $(LINUX_SRCDIR) -s kernelversion)
 DEST_IMAGEDIR := projects/camkes-vm-images/$(PLATFORM)
 
-.PHONY: docker shell build_uboot build_rootfs build_linux
+.PHONY: build_uboot build_rootfs build_linux
 
 all: vm_minimal vm_multi vm_cross_connector .config
 
@@ -78,25 +86,19 @@ vm_cross_connector:
 sel4test:
 	make build_sel4test
 
+docker: .config $(docker-targets)
+.PHONY: docker
 
-docker: .config
-ifeq ($(strip $(DOCKER_ARGS)),)
-	DOCKER_IMAGE="$(DOCKER_IMAGE)" \
-	WORKSPACE_DIR="$(WORKSPACE_DIR)" \
-	DOCKER_ARGS="--build-arg UID=$(shell id -u) --build-arg GID=$(shell id -g)" \
-	./scripts/build_docker.sh
-else
-	DOCKER_IMAGE="$(DOCKER_IMAGE)" \
-	WORKSPACE_DIR="$(WORKSPACE_DIR)" \
-	DOCKER_ARGS="$(DOCKER_ARGS)" \
-	./scripts/build_docker.sh
-endif
+$(docker-targets): docker-%:
+	docker build \
+		-t tiiuae/$*:latest \
+		-f docker/Dockerfile.$* \
+		docker \
+		$(DOCKER_BUILD_ARGS)
+.PHONY: $(docker-targets)
 
-shell: .config
-	DOCKER_IMAGE="$(DOCKER_IMAGE)" \
-	WORKSPACE_DIR="$(WORKSPACE_DIR)" \
-	DOCKER_ARGS="$(DOCKER_ARGS)" \
-	./docker/enter_container.sh
+$(shell-targets): shell-%: .config
+	./docker/enter_container.sh -d $*
 
 build_uboot: .config
 	ARCH=arm \
