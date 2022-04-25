@@ -16,3 +16,6 @@ grep meta-sel4 conf/bblayers.conf 2>/dev/null 1>&2 || \
 
 grep meta-raspberrypi conf/bblayers.conf 2>/dev/null 1>&2 || \
   printf 'BBLAYERS += "%s/meta-raspberrypi"\n' "$LAYERS_ROOT" >> conf/bblayers.conf
+
+grep meta-oe conf/bblayers.conf 2>/dev/null 1>&2 || \
+  printf 'BBLAYERS += "%s/meta-openembedded/meta-oe"\n' "$LAYERS_ROOT" >> conf/bblayers.conf
