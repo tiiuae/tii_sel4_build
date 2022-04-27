@@ -2,7 +2,7 @@
 
 These instructions have been tested with Ubuntu 20.10 desktop and Fedora 33.
 
-## Setting up the build environment
+# Setting up the build environment
 
 ## Update your computer and install prerequisites
 
@@ -115,6 +115,118 @@ host% <b>make shell</b>
 container% <b>aarch64-linux-gnu-objdump -D rpi4_sel4test/kernel/kernel.elf</b>
 </pre>
 
+## Network booting
+
+This seL4 playground boots from network.
+
+### Setting up NFS root
+
+Create a directory on the NFS server:
+
+<pre>
+host% <b>sudo mkdir -p /srv/nfs/rpi4</b>
+</pre>
+
+Add this directory to NFS exports:
+
+<pre>
+host% <b>cat /etc/exports</b>
+/srv/nfs/rpi4 192.168.5.0/24(rw,no_root_squash)
+host% <b>sudo exportfs -a</b>
+</pre>
+
+### Pass NFS server info via DHCP
+
+<pre>
+host% <b>cat /etc/dhcp/dhcpd.conf</b>
+option domain-name     "local.domain";
+default-lease-time 600;
+max-lease-time 7200;
+authoritative;
+
+subnet 192.168.5.0 netmask 255.255.255.0 {
+    range dynamic-bootp 192.168.5.200 192.168.5.254;
+    option broadcast-address 192.168.5.255;
+    option routers 192.168.5.1;
+
+    option root-path "192.168.5.1:/srv/nfs/rpi4,vers=3,proto=tcp";
+}
+</pre>
+
+It is the most convenient to use TCP since the Fedora firewall will block UDP
+by default.
+
+### Extract root filesystem to NFS share
+
+<pre>
+host% <b>sudo tar -C /srv/nfs/rpi4 -xjpvf ${WORKSPACE}/vm-images/build/tmp/deploy/images/raspberrypi4-64/vm-image-driver-raspberrypi4-64.tar.bz2</b>
+</pre>
+
+### Setup Raspberry Pi 4 for network booting
+
+| TBD: add Raspberry Pi 4 DHCP+TFTP+NFS booting instructions! |
+| --- |
+
+# QEMU, virtio and seL4
+
+The ```vm_qemu_virtio``` example demonstrates TII's experimental work to bring QEMU-backed
+virtio devices into guest VMs. An instance of QEMU is running in driver-VM and it provides
+virtio-blk, virtio-console, virtio-net and virtfs to the user-VM guest. This demo abandons
+Buildroot and uses Yocto to build the guest VM images.
+
+<pre>
+host$ <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git -b tii/development</b>
+host$ <b>repo sync</b>
+host$ <b>make docker</b>
+
+# build driver-VM and user-VM images
+host$ <b>make shell</b>
+container$ <b>cd vm-images</b>
+container$ <b>. setup.sh</b>
+container$ <b>bitbake vm-image-driver</b>
+container$ <b>bitbake vm-image-user</b>
+
+# copy kernel image in place, and build qemu seL4 vm_qemu_virtio
+container$ <b>cp vm-images/build/tmp/deploy/images/raspberrypi4-64/Image projects/camkes-vm-images/rpi4/linux</b>
+container$ <b>make rpi4_defconfig</b>
+container$ <b>make vm_qemu_virtio</b>
+# exit container
+container$ <b>exit</b>
+
+# copy seL4 image to TFTP directory
+host$ <b>cp rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711 /var/lib/tftpboot</b>
+
+# expose driver-VM image via NFS (update your directory to command)
+host$ <b>tar -C /srv/nfs/rpi4 -xjpvf vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/vm-image-driver-raspberrypi4-64.tar.bz2</b>
+
+# copy user-VM image to NFS
+host$ <b>cp vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/vm-image-user-vm-raspberrypi4-64.wic.qcow2 /srv/nfs/rpi4/myimg.qcow2</b>
+
+# create host/guest shared directory
+host$ <b>mkdir /srv/nfs/rpi4/host</b>
+</pre>
+
+# Using QEMU demo
+
+After the driver-VM has booted, log in (empty root password) and start the user-VM:
+
+<pre>
+driver-vm$ <b>screen -c screenrc-drivervm</b>
+</pre>
+
+This will start a ```screen``` session, with one shell for interactive use and the another one is QEMU's stdout, works also
+as a console for user-VM. You can switch between the windows using ^A<number>. In case you are using ```minicom```, you need to press
+^A twice.
+
+When the user-VM has booted, log in. There is ```screenrc-uservm```, which starts an interactive shell and stress tests for virtio-blk,
+virtio-net and virtio-console. To launch it, just type:
+
+<pre>
+user-vm$ <b>screen -c screenrc-uservm</b>
+</pre>
+
+Within user-VM, the ```screen``` control character has been mapped to ^B.
+
 # Rebuilding guest VM components
 
 We have migrated over to Yocto build system, which builds both the kernel and the
@@ -148,6 +260,8 @@ The root filesystem will be located at
 ```/workspace/vm-images/build/tmp/deploy/images/raspberrypi4-64/vm-image-driver-raspberrypi4-64.tar.bz2```.
 The root is mounted over NFS and as such you do not need to copy it to ```camkes-vm-examples```. See instructions
 below on how to make this root filesystem available to NFS clients.
+
+# Customizing Yocto packages
 
 To customize the guest Linux kernel, use facilities Yocto provides:
 
@@ -233,50 +347,3 @@ drwxr-xr-x. 4 root root    62 Dec 10 11:49 sysroots/
 </pre>
 
 All tools and libraries can now be found from ```/opt/poky/3.4/sysroots/```
-
-# Network booting
-
-This seL4 playground boots from network.
-
-## Setting up NFS root
-
-Create a directory on the NFS server:
-
-<pre>
-host% <b>sudo mkdir -p /exports/rpi4</b>
-</pre>
-
-Add this directory to NFS exports:
-
-<pre>
-host% <b>cat /etc/exports</b>
-/exports/rpi4 192.168.5.0/24(rw,no_root_squash)
-host% <b>sudo exportfs -a</b>
-</pre>
-
-## Pass NFS server info via DHCP
-
-<pre>
-host% <b>cat /etc/dhcp/dhcpd.conf</b>
-option domain-name     "local.domain";
-default-lease-time 600;
-max-lease-time 7200;
-authoritative;
-
-subnet 192.168.5.0 netmask 255.255.255.0 {
-    range dynamic-bootp 192.168.5.200 192.168.5.254;
-    option broadcast-address 192.168.5.255;
-    option routers 192.168.5.1;
-
-    option root-path "192.168.5.1:/exports/rpi4,vers=3,proto=tcp";
-}
-</pre>
-
-It is the most convenient to use TCP since the Fedora firewall will block UDP
-by default.
-
-## Extract root filesystem to NFS share
-
-<pre>
-host% <b>sudo tar -C /exports/rpi4 -xjpvf ${WORKSPACE}/vm-images/build/tmp/deploy/images/raspberrypi4-64/vm-image-driver-raspberrypi4-64.tar.bz2</b>
-</pre>
