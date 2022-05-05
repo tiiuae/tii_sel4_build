@@ -88,7 +88,7 @@ USER build
 
 RUN pip3 install \
     aenum \
-    orderedset \
+    ordered_set \
     plyplus \
     pyfdt \
     pyyaml
