@@ -71,19 +71,9 @@ use the ```newgrp``` command). In any case verify with the ```groups``` command.
 host% <b>export WORKSPACE=~/sel4</b>
 
 host% <b>mkdir ${WORKSPACE} && cd ${WORKSPACE}</b>
-host% <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git -b tii/development</b>
+host% <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git -b wip/hlyytine-virtio-blk -m virtio-qemu.xml</b>
 host% <b>repo sync</b>
 </pre>
-
-| NOTE: If you are external (not part of TII organization), you must use ```-m external.xml``` also. This is because TII has internal R&D and as of time being, some of the repositories cannot be shared. |
-| --- |
-
-<pre>
-# repo commands for externals
-host% <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git -b tii/development -m external.xml</b>
-host% <b>repo sync</b>
-</pre>
-
 
 ## Build docker images
 <pre>
