@@ -74,3 +74,10 @@ jobs:
           CONFIG: ${{ inputs.platform }}
           TARGET: 'sel4test'
           WORKSPACE: './workspace'
+
+      - name: Build vm_qemu_virtio
+        uses: ./.github/actions/vm-image
+        with:
+          CONFIG: ${{ inputs.platform }}
+          TARGET: 'vm_qemu_virtio'
+          WORKSPACE: './workspace'
