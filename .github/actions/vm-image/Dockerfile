@@ -62,7 +62,7 @@ RUN apt-get update && apt-get -y install \
 # FIXME: Move these to either of RUN statements?
 RUN pip3 install \
     aenum \
-    orderedset \
+    ordered_set \
     plyplus \
     pyfdt \
     pyyaml \
