@@ -1,0 +1,47 @@
+name: Publish to artifactory
+description: push images to artifactory
+
+inputs:
+  rt-user:
+    description: 'user account for artifactory'
+    required: true
+  rt-api-key:
+     description: 'api-key for artifactory'
+     required: true
+  rt-url:
+    description: 'artifactory url'
+    required: true
+  build-num:
+    description: 'build number'
+    required: false
+  input-paths:
+    description: 'input-paths'
+    required: true
+
+runs:
+    using: "composite"
+    steps:
+      - name: Preparing artifactory for upload
+        uses: "jfrog/setup-jfrog-cli@v2"
+      - name: Pushing to artifactory
+        shell: bash
+        env:
+          RT_USER: ${{ inputs.rt-user }}
+          RT_API_KEY: ${{ inputs.rt-api-key }}
+          RT_URL: ${{ inputs.rt-url }}
+          BUILD_NUM: ${{ inputs.build-num }}
+          INPUT_PATHS: ${{ inputs.input-paths}}
+        run: |
+          jf c add --url "$RT_URL" --user "$RT_USER" --password "$RT_API_KEY"
+          jf rt ping
+          for input in $INPUT_PATHS; do
+            SOURCE_DIR=${input%%:*}
+            DEST_DIR=${input#*:}
+            if [ $BUILD_NUM  ]; then
+              sudo mv $SOURCE_DIR $SOURCE_DIR-b"$BUILD_NUM"
+              jf rt u $SOURCE_DIR-b"$BUILD_NUM" $DEST_DIR --flat=true
+            else
+              jf rt u $SOURCE_DIR $DEST_DIR --flat=true
+            fi
+          done
+
