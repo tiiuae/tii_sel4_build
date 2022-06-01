@@ -90,19 +90,11 @@ jobs:
           CONFIG: ${{ inputs.platform }}
           TARGET: 'vm_qemu_virtio'
           WORKSPACE: './workspace'
-      - name: Preparing artifactory for upload
-        uses: "jfrog/setup-jfrog-cli@v2"
-      - name: Pushing to artifactory
-        env: 
-          RT_USER: ${{ secrets.rt-user }}
-          RT_API_KEY: ${{ secrets.rt-api-key }}
-          RT_URL: ${{ secrets.rt-url }}
-          BD_NUM: ${{ github.run_number }}
-# Login to artifactory, append build number to binaries, push binaries to artifactory.
-        run: |
-          jf c add --url "$RT_URL" --user "$RT_USER" --password "$RT_API_KEY"
-          jf rt ping
-          cd workspace
-          DIR=(rpi4_vm_minimal rpi4_vm_multi rpi4_sel4test rpi4_vm_qemu_virtio)
-          for DIRNAME in ${DIR[@]}; do for FILENAME in $DIRNAME/images/*; do sudo mv $FILENAME $FILENAME-b"$BD_NUM"; done; done
-          for DIRNAME in ${DIR[@]}; do jf rt u "$DIRNAME/images/*" tii-sel4-artifacts/; done
+
+      - name: Publish image to artifactory
+        uses: ./.github/actions/vm-image-publish
+        with:
+          rt-user: ${{ secrets.rt-user }}
+          rt-api-key: ${{ secrets.rt-api-key }}
+          rt-url: ${{ secrets.rt-url }}
+          bd-num: ${{ github.run_number }}     

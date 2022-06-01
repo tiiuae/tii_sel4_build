@@ -1,0 +1,35 @@
+name: Publish to artifactory
+description: push images to artifactory
+
+inputs:
+  rt-user:
+    description: 'user account for artifactory'
+    required: true
+  rt-api-key:
+     description: 'api-key for artifactory'
+     required: true       
+  rt-url:
+    description: 'artifactory url'
+    required: true  
+  bd-num:
+    description: build number 
+    required: true
+runs:
+    using: "composite"
+    steps: 
+      - name: Preparing artifactory for upload
+        uses: "jfrog/setup-jfrog-cli@v2"
+      - name: Pushing to artifactory
+        shell: bash
+        env: 
+          RT_USER: ${{ inputs.rt-user }}
+          RT_API_KEY: ${{ inputs.rt-api-key }}
+          RT_URL: ${{ inputs.rt-url }}
+          BD_NUM: ${{ inputs.bd-num }}
+        run: |
+          jf c add --url "$RT_URL" --user "$RT_USER" --password "$RT_API_KEY"
+          jf rt ping
+          cd workspace
+          DIR=(rpi4_vm_minimal rpi4_vm_multi rpi4_sel4test rpi4_vm_qemu_virtio)
+          for DIRNAME in ${DIR[@]}; do for FILENAME in $DIRNAME/images/*; do sudo mv $FILENAME $FILENAME-b"$BD_NUM"; done; done
+          for DIRNAME in ${DIR[@]}; do jf rt u "$DIRNAME/images/*" tii-sel4-artifacts/; done
