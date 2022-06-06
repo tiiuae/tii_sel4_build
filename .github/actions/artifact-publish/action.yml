@@ -14,6 +14,16 @@ inputs:
   bd-num:
     description: build number 
     required: true
+  source_dir:
+    description: source location of artifacts
+    required: true
+  dest_dir:
+    description: destination location of artifacts
+    required: true
+  add_bd_num:
+    description: append build number to artifact if required
+    required: true
+    
 runs:
     using: "composite"
     steps: 
@@ -26,10 +36,15 @@ runs:
           RT_API_KEY: ${{ inputs.rt-api-key }}
           RT_URL: ${{ inputs.rt-url }}
           BD_NUM: ${{ inputs.bd-num }}
+          DIR: ${{ inputs.source_dir }}
+          DEST: ${{ inputs.dest_dir }}
+          ADD_BD_NUM:  ${{ inputs.add_bd_num }}
         run: |
           jf c add --url "$RT_URL" --user "$RT_USER" --password "$RT_API_KEY"
           jf rt ping
-          cd workspace
-          DIR=(rpi4_vm_minimal rpi4_vm_multi rpi4_sel4test rpi4_vm_qemu_virtio)
-          for DIRNAME in ${DIR[@]}; do for FILENAME in $DIRNAME/images/*; do sudo mv $FILENAME $FILENAME-b"$BD_NUM"; done; done
-          for DIRNAME in ${DIR[@]}; do jf rt u "$DIRNAME/images/*" tii-sel4-artifacts/; done
+          if "$ADD_BD_NUM" ; then 
+          sudo mv $DIR $DIR-b"$BD_NUM"
+          jf rt u $DIR-b"$BD_NUM" $DEST --recursive=false
+          else
+          jf rt u $DIR $DEST --recursive=false
+          fi 
