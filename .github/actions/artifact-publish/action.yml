@@ -11,19 +11,13 @@ inputs:
   rt-url:
     description: 'artifactory url'
     required: true  
-  bd-num:
-    description: build number 
+  build-num:
+    description: 'build number'
+    required: false
+  input-paths:
+    description: 'input-paths' 
     required: true
-  source_dir:
-    description: source location of artifacts
-    required: true
-  dest_dir:
-    description: destination location of artifacts
-    required: true
-  add_bd_num:
-    description: append build number to artifact if required
-    required: true
-    
+
 runs:
     using: "composite"
     steps: 
@@ -35,16 +29,19 @@ runs:
           RT_USER: ${{ inputs.rt-user }}
           RT_API_KEY: ${{ inputs.rt-api-key }}
           RT_URL: ${{ inputs.rt-url }}
-          BD_NUM: ${{ inputs.bd-num }}
-          DIR: ${{ inputs.source_dir }}
-          DEST: ${{ inputs.dest_dir }}
-          ADD_BD_NUM:  ${{ inputs.add_bd_num }}
+          BUILD_NUM: ${{ inputs.build-num }}
+          INPUT_PATHS: ${{ inputs.input-paths}} 
         run: |
           jf c add --url "$RT_URL" --user "$RT_USER" --password "$RT_API_KEY"
           jf rt ping
-          if "$ADD_BD_NUM" ; then 
-          sudo mv $DIR $DIR-b"$BD_NUM"
-          jf rt u $DIR-b"$BD_NUM" $DEST --recursive=false
+          for input in $INPUT_PATHS; do
+          SOURCE_DIR=${input%%:*}
+          DEST_DIR=${input#*:}
+          if [ $BUILD_NUM  ]; then
+          sudo mv $SOURCE_DIR $SOURCE_DIR-b"$BUILD_NUM" 
+          jf rt u $SOURCE_DIR-b"$BUILD_NUM" $DEST_DIR --flat=true
           else
-          jf rt u $DIR $DEST --recursive=false
+          jf rt u $SOURCE_DIR $DEST_DIR --flat=true
           fi 
+          done
+       

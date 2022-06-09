@@ -91,47 +91,15 @@ jobs:
           TARGET: 'vm_qemu_virtio'
           WORKSPACE: './workspace'
 
-      - name: Publish vm_minimal image to artifactory
+      - name: Publish images to artifactory
         uses: ./.github/actions/artifact-publish
         with:
           rt-user: ${{ secrets.rt-user }}
           rt-api-key: ${{ secrets.rt-api-key }}
           rt-url: ${{ secrets.rt-url }}
-          bd-num: ${{ github.run_number }}    
-          source_dir:  workspace/rpi4_vm_minimal/images/capdl-loader-image-arm-bcm2711
-          dest_dir:  tii-sel4-artifacts/rpi4_vm_minimal/
-          add_bd_num: true
-
-      - name: Publish vm_multi image to artifactory
-        uses: ./.github/actions/artifact-publish
-        with:
-          rt-user: ${{ secrets.rt-user }}
-          rt-api-key: ${{ secrets.rt-api-key }}
-          rt-url: ${{ secrets.rt-url }}
-          bd-num: ${{ github.run_number }}    
-          source_dir:  workspace/rpi4_vm_multi/images/capdl-loader-image-arm-bcm2711
-          dest_dir:  tii-sel4-artifacts/rpi4_vm_multi/
-          add_bd_num: true
-
-      - name: Publish sel4test image to artifactory
-        uses: ./.github/actions/artifact-publish
-        with:
-          rt-user: ${{ secrets.rt-user }}
-          rt-api-key: ${{ secrets.rt-api-key }}
-          rt-url: ${{ secrets.rt-url }}
-          bd-num: ${{ github.run_number }}    
-          source_dir:  workspace/rpi4_sel4test/images/sel4test-driver-image-arm-bcm2711
-          dest_dir:  tii-sel4-artifacts/rpi4_sel4test/
-          add_bd_num: true
-
-      - name: Publish vm_qemu_virtio image to artifactory
-        uses: ./.github/actions/artifact-publish
-        with:
-          rt-user: ${{ secrets.rt-user }}
-          rt-api-key: ${{ secrets.rt-api-key }}
-          rt-url: ${{ secrets.rt-url }}
-          bd-num: ${{ github.run_number }}    
-          source_dir:  workspace/rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711
-          dest_dir:  tii-sel4-artifacts/rpi4_vm_qemu_virtio/
-          add_bd_num: true
-    
+          build-num: ${{ github.run_number }}    
+          input-paths:  |
+            workspace/rpi4_vm_minimal/images/capdl-loader-image-arm-bcm2711:tii-sel4-artifacts/rpi4_vm_minimal/
+            workspace/rpi4_vm_multi/images/capdl-loader-image-arm-bcm2711:tii-sel4-artifacts/rpi4_vm_multi/
+            workspace/rpi4_sel4test/images/sel4test-driver-image-arm-bcm2711:tii-sel4-artifacts/rpi4_vm_sel4test/
+            workspace/rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711:tii-sel4-artifacts/rpi4_vm_qemu_virtio/
