@@ -12,7 +12,13 @@ if test "x${CMD}" = "x"; then
   CMD="/bin/bash"
 fi
 
-exec docker run --rm -it \
+# Support for non-terminal runs
+INTERACTIVE=
+if test -t 0; then
+  INTERACTIVE="-it"
+fi
+
+exec docker run --rm ${INTERACTIVE} \
   -v ${DIR}:/workspace:z \
   -v ${HOME}/.ssh:/home/build/.ssh:z \
   -v ${HOME}/.gitconfig:/home/build/.gitconfig:z \
