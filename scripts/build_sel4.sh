@@ -30,8 +30,19 @@ ln -rs "${SRCDIR}/easy-settings.cmake" "${BUILDDIR}"
 
 cd "${BUILDDIR}" || exit 2
 
+if [ "x${SEL4_TRACE}" = "xON" ]; then
+  TRACE="-DKernelArmExportPMUUser=ON -DKernelBenchmarks=track_kernel_entries"
+fi
+
 # shellcheck disable=SC2068
-./init-build.sh -B . -DAARCH64=1 -DPLATFORM="${PLATFORM}" -DCROSS_COMPILER_PREFIX="${CROSS_COMPILE}" $@
+./init-build.sh \
+  -B . \
+  -DAARCH64=1 \
+  -DPLATFORM="${PLATFORM}" \
+  -DCROSS_COMPILER_PREFIX="${CROSS_COMPILE}" \
+  ${TRACE} \
+  $@
+
 ninja
 
 echo "Here are your binaries in ${BUILDDIR}/images: "
