@@ -101,6 +101,7 @@ RUN pip3 install \
 RUN \
     git clone https://github.com/seL4/capdl.git /home/build/capdl && \
     cd /home/build/capdl/capDL-tool && \
+    git reset --hard 3fc1a1525de2c23bc397830d5fcb744e2573efb3 && \
     stack build --only-dependencies && \
     cd /home/build && \
     rm -rf /home/build/capdl
