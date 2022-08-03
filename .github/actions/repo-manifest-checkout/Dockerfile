@@ -1,5 +1,5 @@
 # Copyright 2022, Technology Innovation Institute
-FROM debian:bullseye
+FROM ubuntu:22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
