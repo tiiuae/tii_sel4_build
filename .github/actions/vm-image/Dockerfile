@@ -7,7 +7,6 @@ ENV TZ=Europe/Helsinki
 
 # seL4 deps
 RUN apt-get update && apt-get -y install \
-    repo \
     file \
     locales \
     build-essential \
