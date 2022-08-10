@@ -74,8 +74,7 @@ RUN apt-get -y install \
         gcc-aarch64-linux-gnu \
         g++-aarch64-linux-gnu
 
-RUN locale-gen en_US.UTF-8
-
+RUN echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && locale-gen
 RUN useradd -m -d /home/build -s /bin/bash -G sudo -u 1000 build
 RUN echo 'build:build' | chpasswd
 RUN ln -s /usr/bin/python3 /usr/bin/python
