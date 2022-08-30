@@ -1,0 +1,147 @@
+name: tii-seL4-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tii-sel4-version:
+        description: 'SeL4-vm release version'
+        required: true
+      release-doc:
+        description: 'Release doc location'
+        required: true
+      platform:
+        description: 'Platform config'
+        default: 'rpi4_defconfig'
+        required: false
+      manifest-url:
+        description: 'Manifest repository'
+        required: true
+        type: string
+      manifest-revision:
+        description: 'Manifest revision'
+        default: 'tii/development'
+        required: false
+        type: string
+      manifest-file:
+        description: 'Manifest file'
+        default: 'default.xml'
+        required: true
+        type: string
+
+jobs:
+    tii-sel4-vm:
+      name: build tii-seL4-vm
+      runs-on: self-hosted
+      steps:
+        - name: Prepare workspace
+          run: |
+           rm -rf *
+           echo "TII_SEL4_RELEASE=tii_sel4_${{inputs.tii-sel4-version}}" >> $GITHUB_ENV
+        - name: Checkout code for using local actions
+          uses: actions/checkout@v2
+
+        - name: check out code
+          uses: ./.github/actions/repo-manifest-checkout
+          with:
+            MANIFEST_URL: ${{ inputs.manifest-url }}
+            MANIFEST_REVISION: ${{ inputs.manifest-revision }}
+            MANIFEST: ${{ inputs.manifest-file }}
+            SSH_KEY: ${{ secrets.SSH_KEY }}
+            SSH_KEYSCAN_URL: 'github.com'
+  
+        - name: Build Docker image
+          working-directory: ./workspace
+          run: |
+            make docker
+        - name: Build root file systems and kernel images
+          working-directory: ./workspace
+          run: |
+            sudo chown -R $USER:$USER ../workspace
+            make linux-image
+        - name: Copy kernel in place for seL4 builds
+          working-directory: ./workspace
+          run: |
+            cp vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/Image \
+            projects/camkes-vm-images/rpi4
+        - name: Build vm_minimal
+          uses: ./.github/actions/vm-image
+          with:
+            CONFIG: ${{ inputs.platform }}
+            TARGET: 'vm_minimal'
+        - name: Build vm_multi
+          uses: ./.github/actions/vm-image
+          with:
+            CONFIG: ${{ inputs.platform }}
+            TARGET: 'vm_multi'
+        - name: Build sel4test
+          uses: ./.github/actions/vm-image
+          with:
+            CONFIG: ${{ inputs.platform }}
+            TARGET: 'sel4test'
+        - name: Build vm_qemu_virtio
+          uses: ./.github/actions/vm-image
+          with:
+            CONFIG: ${{ inputs.platform }}
+            TARGET: 'vm_qemu_virtio' 
+        -  name: Collect artifacts
+           working-directory: ./workspace
+           run: |
+            mkdir -p "${{env.TII_SEL4_RELEASE}}/bin/boot"
+
+            repo manifest \
+            -r \
+            --suppress-upstream-revision \
+            --suppress-dest-branch \
+            -o "${{env.TII_SEL4_RELEASE}}/manifest.xml"
+
+            declare -A targets=(
+              ["rpi4_vm_minimal/images/capdl-loader-image-arm-bcm2711"]=rpi4_vm_minimal
+              ["rpi4_vm_multi/images/capdl-loader-image-arm-bcm2711"]=rpi4_vm_multi
+              ["rpi4_sel4test/images/sel4test-driver-image-arm-bcm2711"]=rpi4_sel4test
+              ["rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711"]=rpi4_vm_qemu_virtio
+              )
+
+            for target in "${!targets[@]}"; do
+            cp "$target" "${{env.TII_SEL4_RELEASE}}/bin/boot/${targets[$target]}"
+            done
+
+            declare yocto_targets=(
+            "vm-image-driver-vm-*.ext3"
+            "vm-image-driver-vm-*.tar.bz2"
+            "vm-image-driver-vm-*.manifest"
+            "Image*"
+            )
+
+            for target in "${yocto_targets[@]}"; do
+            cp -P vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/$target "${{env.TII_SEL4_RELEASE}}/bin/"
+            done
+
+            declare yocto_boot_targets=(
+            "u-boot.bin"
+            "bcm2711-rpi-4-b.dtb"
+            "bootcode.bin"
+            "start4.elf"
+            "fixup4.dat"
+            "config.txt"
+            )
+
+            for target in "${yocto_boot_targets[@]}"; do
+            cp tii_sel4_build/hardware/rpi4/$target "${{env.TII_SEL4_RELEASE}}/bin/boot/"
+            done
+        - name: Copy release documentaion
+          run: |
+            cp ${{inputs.release-doc}} workspace/"${{env.TII_SEL4_RELEASE}}/"
+        - name: Create release package 
+          working-directory: ./workspace
+          run: |
+            fakeroot tar -cjf "${{env.TII_SEL4_RELEASE}}.tar.bz2" "${{env.TII_SEL4_RELEASE}}"
+        - name: Prepare artifactory for upload
+          uses: "jfrog/setup-jfrog-cli@v2"
+        - name: Push to artifactory
+          uses: ./.github/actions/artifact-publish
+          with:
+            rt-user: ${{ secrets.RT_USER }}
+            rt-api-key: ${{ secrets.RT_APIKEY }}
+            rt-url: ${{ secrets.RT_URL }}
+            input-paths:  |
+              workspace/${{env.TII_SEL4_RELEASE}}.tar.bz2:tii-sel4-vm-release/
