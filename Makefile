@@ -29,3 +29,7 @@ docker:
 
 linux-image:
 	@scripts/build_yocto.sh
+
+shell:
+	@docker/enter_container.sh
+
