@@ -1,5 +1,13 @@
 FROM debian:bullseye
 
+ARG USERNAME=build
+ARG PASSWORD=build
+ARG HOMEDIR=/home/build
+ARG USERSHELL=/bin/bash
+ARG UID=1000
+ARG GID=1000
+ARG ENV_SETUP_SCRIPT=.container_env_setup.sh
+
 # tzdata noninteractive install
 ENV TZ=Europe/Helsinki
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
@@ -62,11 +70,9 @@ RUN apt-get -y install \
         libsdl1.2-dev \
         xterm \
         liblz4-tool \
-        zstd
-
-# screen is required by linux menuconfig
-RUN apt-get -y install \
-        screen
+        zstd \
+	# screen is required by linux menuconfig
+	screen
 
 # Yocto build dependencies will uninstall these cross-compilers,
 # so install them after everything else.
@@ -75,15 +81,28 @@ RUN apt-get -y install \
         g++-aarch64-linux-gnu
 
 RUN echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && locale-gen
-RUN useradd -m -d /home/build -s /bin/bash -G sudo -u 1000 build
-RUN echo 'build:build' | chpasswd
 RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN groupadd -g ${GID} -o ${USERNAME} \
+  && useradd -m -d ${HOMEDIR} -s ${USERSHELL} -G sudo -o -u ${UID} -g ${GID} ${USERNAME} \
+  && echo "${USERNAME}:${PASSWORD}" | chpasswd
+
+# Automate adding SSH keys to SSH agent
+RUN mkdir -m 0700 ${HOMEDIR}/.ssh \
+  && chown -R "${USERNAME}:${GID}" ${HOMEDIR}/.ssh
+COPY ${ENV_SETUP_SCRIPT} ${HOMEDIR}/${ENV_SETUP_SCRIPT}
+RUN chown "${USERNAME}:${GID}" ${HOMEDIR}/${ENV_SETUP_SCRIPT} && \
+    chmod ug+x ${HOMEDIR}/${ENV_SETUP_SCRIPT}
 RUN printf '\n\n\
-eval $(ssh-agent -s &> /dev/null)\n\
-find /home/build/.ssh/ -type f -exec grep -l "PRIVATE" {} \; | xargs ssh-add &> /dev/null'\
->> /home/build/.bashrc
-RUN printf 'add-auto-load-safe-path /workspace/.gdbinit' >> /home/build/.gdbinit
-USER build
+alias ll="ls -la --color=auto"\n\
+alias llh="ls -lha --color=auto"\n\
+eval "$(ssh-agent -s)"\n\
+source '${HOMEDIR}'/'${ENV_SETUP_SCRIPT}''\
+>> ${HOMEDIR}/.bashrc
+RUN chown "${USERNAME}:${GID}" ${HOMEDIR}/.bashrc
+RUN printf 'add-auto-load-safe-path /workspace/.gdbinit' >> ${HOMEDIR}/.gdbinit
+RUN chown "${USERNAME}:${GID}" ${HOMEDIR}/.gdbinit
+
+USER ${USERNAME}
 
 RUN pip3 install \
     aenum \
@@ -98,12 +117,11 @@ RUN pip3 install \
 # container.
 
 RUN \
-    git clone https://github.com/seL4/capdl.git /home/build/capdl && \
-    cd /home/build/capdl/capDL-tool && \
+    git clone https://github.com/seL4/capdl.git ${HOMEDIR}/capdl && \
+    cd ${HOMEDIR}/capdl/capDL-tool && \
     stack build --only-dependencies && \
-    cd /home/build && \
-    rm -rf /home/build/capdl
+    cd ${HOMEDIR} && \
+    rm -rf ${HOMEDIR}/capdl
 
 ENV WORKSPACE=/workspace
-
 WORKDIR /workspace
