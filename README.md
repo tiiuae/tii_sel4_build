@@ -148,6 +148,7 @@ subnet 192.168.5.0 netmask 255.255.255.0 {
     range dynamic-bootp 192.168.5.200 192.168.5.254;
     option broadcast-address 192.168.5.255;
     option routers 192.168.5.1;
+    option next-server 192.168.5.1;
 
     option root-path "192.168.5.1:/srv/nfs/rpi4,vers=3,proto=tcp";
 }
