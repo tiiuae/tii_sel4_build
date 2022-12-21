@@ -81,6 +81,33 @@ repo init ${INPUT_REPO_INIT_OPTS} \
   -b "$INPUT_MANIFEST_REVISION" \
   -m "$INPUT_MANIFEST"
 
+
+
+if [ -n "$INPUT_REPO_OVERRIDE" ] || [-n "$INPUT_BRANCH_OVERRIDE" ]; then
+  MANIFEST_FILE=.repo/manifests/external.xml
+  MANIFEST_FILE_ORG=.repo/manifests/external_org.xml
+  mv $MANIFEST_FILE $MANIFEST_FILE_ORG
+  ../scripts/override.sh "$INPUT_REPO_OVERRIDE" "$INPUT_BRANCH_OVERRIDE" "$MANIFEST_FILE_ORG" > $MANIFEST_FILE
+fi  
+  echo "Branch override"
+  cat .repo/manifests/external.xml
+
+# if [ -n "$INPUT_REPO_OVERRIDE" ]; then
+
+#   mv .repo/manifests/external.xml .repo/manifests/external_org.xml
+#   ../scripts/repo_override.sh "$INPUT_REPO_OVERRIDE" ".repo/manifests/external_org.xml" > .repo/manifests/external.xml
+#   echo "New manifest"
+#   cat .repo/manifests/external.xml
+
+# fi
+
+# if [ -n "$INPUT_BRANCH_OVERRIDE" ]; then
+#   mv .repo/manifests/external.xml .repo/manifests/external_org.xml
+#   ../scripts/branch_override.sh $INPUT_BRANCH_OVERRIDE ".repo/manifests/external_org.xml" > .repo/manifests/external.xml
+#     echo "Branch override"
+#   cat .repo/manifests/external.xml
+
+# fi
 # shellcheck disable=SC2086
 repo sync ${INPUT_REPO_SYNC_OPTS}
 
