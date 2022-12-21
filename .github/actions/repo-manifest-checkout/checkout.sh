@@ -81,6 +81,15 @@ repo init ${INPUT_REPO_INIT_OPTS} \
   -b "$INPUT_MANIFEST_REVISION" \
   -m "$INPUT_MANIFEST"
 
+if [ -n "$INPUT_REPO_OVERRIDE" ]; then
+    mv .repo/manifests/external.xml .repo/manifests/external_org.xml
+  ../scripts/repo_override.sh "$REPO_OVERRIDES" ".repo/manifests/external_org.xml" > .repo/manifests/external.xml
+fi
+
+if [ -n "$INPUT_BRANCH_OVERRIDE" ]; then
+  mv .repo/manifests/external.xml .repo/manifests/external_org.xml
+  ../scripts/branch_override.sh $INPUT_BRANCH_OVERRIDE ".repo/manifests/external_org.xml" > .repo/manifests/external.xml
+fi
 # shellcheck disable=SC2086
 repo sync ${INPUT_REPO_SYNC_OPTS}
 
