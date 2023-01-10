@@ -1,8 +1,12 @@
-#! /bin/bash
+#!/bin/bash
+#
+# Copyright 2022, Technology Innovation Institute
+#
+# SPDX-License-Identifier: BSD-2-Clause
+#
 
 # Global variables
 CONTAINER_RUNNER=
-CONTAINER_SSH_SECRETS=()
 CONTAINER_SSH_DIR=
 CONTAINER_PRIVDATA_DIR=
 CONTAINER_PRIVDATA_DIR_MODE=700
@@ -14,24 +18,9 @@ SSH_ALL_KEYS_PATTERN="public|private"
 SSH_PUB_KEYS_PATTERN="public"
 SSH_PRIV_KEYS_PATTERN="private"
 
-# Crude logging functions
-log_stdout()
-{
-  printf "%s: %s\n" "$0" "$*" >&1;
-}
-log_stderr()
-{
-  printf "%s: %s\n" "$0" "$*" >&2;
-}
 
-die()
-{ 
-  log_stderr "$*"; exit 111
-}
 
-check_docker_is_podman() {
-  docker --help 2>&1 | grep -q podman
-}
+
 
 # When using rootless Podman on a SELinux
 # enabled system, it is difficult to reasonably
@@ -74,45 +63,8 @@ check_docker_is_podman() {
 # isn't optimal, but it works reasonably as long as
 # the directory is deleted right after the container exits.
 #
+podman run --rm -it -v $(readlink -f $SSH_AUTH_SOCK 2>/dev/null):/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent test-debian:latest /bin/bash
 
-generate_ssh_secrets() {
-
-  # Remove previous secrets,
-  # if not removed already
-  delete_ssh_secrets
-  
-  while IFS= read -r -d '' filename; do
-
-    # Skip if 'find' somehow globs
-    # together a non-existing filename.
-    [[ -e "${filename}" ]] || continue
-
-    # Skip non-wanted if encountered
-    [[ "${filename}" =~ ${SSH_DIR_SKIP_PATTERN} ]] && continue
-
-    local file_output="$(file "${filename}")"
-
-    # Generate secrets only from public/private keys
-    if [[ "${file_output}" =~ ${SSH_ALL_KEYS_PATTERN} ]]; then
-
-      local secret_name="$(basename "${filename}")"
-
-      if ! podman secret create "${secret_name}" "${filename}" > /dev/null; then
-        log_stderr "Failed to create a secret \"${secret_name}\"!"
-      else
-        CONTAINER_SSH_SECRETS+=( "${secret_name}" )
-      fi
-    fi
-
-  done < <(find "${HOME}/.ssh/" -type f -print0)
-}
-
-delete_ssh_secrets() {
-  if [[ -n "${CONTAINER_SSH_SECRETS}" ]]; then
-    podman secret rm "${CONTAINER_SSH_SECRETS[@]}" > /dev/null 2>&1
-    CONTAINER_SSH_SECRETS=()
-  fi
-}
 
 copy_ssh_keys() {
 
@@ -161,7 +113,7 @@ delete_ssh_keys() {
 setup_env() {
 
   # Set runner engine
-  if check_docker_is_podman; then
+  if is_docker_podman; then
     CONTAINER_RUNNER="podman"
   else
     CONTAINER_RUNNER="docker"
@@ -170,14 +122,8 @@ setup_env() {
   # Setup private data directory
   setup_privdata $@
 
-  # Generate secrets if Podman,
-  # otherwise copy SSH keys for
-  # bind mount.
-  if check_docker_is_podman; then
-    generate_ssh_secrets
-  else
-    copy_ssh_keys
-  fi
+  # Copy SSH keys to temp folder
+  copy_ssh_keys
 }
 
 #ssh_args=$(
@@ -192,7 +138,7 @@ get_args() {
   local mount_args=""
   local user="build"
 
-  if check_docker_is_podman; then
+  if is_docker_podman; then
     base_args="-e CONTAINER_RUNNER=podman --userns=keep-id --cap-add=CAP_SYS_MODULE"
     ssh_args=$(printf " --secret %s " "${CONTAINER_SSH_SECRETS[@]}")
   else

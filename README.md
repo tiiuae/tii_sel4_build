@@ -148,14 +148,19 @@ subnet 192.168.5.0 netmask 255.255.255.0 {
     range dynamic-bootp 192.168.5.200 192.168.5.254;
     option broadcast-address 192.168.5.255;
     option routers 192.168.5.1;
-    next-server 192.168.5.1;
 
-    option root-path "192.168.5.1:/srv/nfs/rpi4,vers=3,proto=tcp,nolock";
+    option root-path "192.168.5.1:/srv/nfs/rpi4,vers=3,proto=tcp";
 }
 </pre>
 
 It is the most convenient to use TCP since the Fedora firewall will block UDP
 by default.
+
+### Extract root filesystem to NFS share
+
+<pre>
+host% <b>sudo tar -C /srv/nfs/rpi4 -xjpvf ${WORKSPACE}/vm-images/build/tmp/deploy/images/raspberrypi4-64/vm-image-driver-raspberrypi4-64.tar.bz2</b>
+</pre>
 
 ### Setup Raspberry Pi 4 for network booting
 
@@ -179,11 +184,10 @@ host$ <b>make shell</b>
 container$ <b>cd vm-images</b>
 container$ <b>. setup.sh</b>
 container$ <b>bitbake vm-image-driver</b>
-container$ <b>bitbake vm-image-boot</b>
+container$ <b>bitbake vm-image-user</b>
 
-# copy kernel and initramfs image in place, and build qemu seL4 vm_qemu_virtio
-container$ <b>cp vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/Image projects/camkes-vm-images/rpi4/linux</b>
-container$ <b>cp vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/vm-image-boot-vm-raspberrypi4-64.cpio.gz projects/camkes-vm-images/rpi4/rootfs.cpio.gz</b>
+# copy kernel image in place, and build qemu seL4 vm_qemu_virtio
+container$ <b>cp vm-images/build/tmp/deploy/images/raspberrypi4-64/Image projects/camkes-vm-images/rpi4/linux</b>
 container$ <b>make rpi4_defconfig</b>
 container$ <b>make vm_qemu_virtio</b>
 # exit container
@@ -194,6 +198,9 @@ host$ <b>cp rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711 /var/lib/t
 
 # expose driver-VM image via NFS (update your directory to command)
 host$ <b>tar -C /srv/nfs/rpi4 -xjpvf vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/vm-image-driver-raspberrypi4-64.tar.bz2</b>
+
+# copy user-VM image to NFS
+host$ <b>cp vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/vm-image-user-vm-raspberrypi4-64.wic.qcow2 /srv/nfs/rpi4/myimg.qcow2</b>
 
 # create host/guest shared directory
 host$ <b>mkdir /srv/nfs/rpi4/host</b>
