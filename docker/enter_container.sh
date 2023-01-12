@@ -1,33 +1,70 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
-. docker/utils.sh
+set -x
 
-# Function in 'utils.sh'
-trap cleanup 0 1 2 3 6 14 15
+SCRIPT_DIR="$(dirname $(realpath $0))/../../scripts"
+echo "$SCRIPT_DIR"
+. "${SCRIPT_DIR}"/utils.sh
 
-WORKSPACE_DIR=$1
-if ! [[ -e "${WORKSPACE_DIR}" ]] ; then
-  WORKSPACE_DIR=$(pwd)
-else
-  shift
+[[ "$#" -lt 3 ]] && die "Too few arguments!"
+
+WORKSPACE_ROOT="$1"
+[[ -e "${WORKSPACE_ROOT}" ]] || die "Workspace root \"${WORKSPACE_ROOT}\" doesn't exist!"
+
+CENGINE="$2"
+[[ -z "${CENGINE}" ]] && die "Unknown container engine!"
+
+CIMAGE="$3"
+[[ -z "${CIMAGE}" ]] && die "Unknown container image!"
+
+shift 3
+
+CEXEC="$*"
+if [[ -z "${CEXEC}" ]]; then
+  CEXEC="/bin/bash"
 fi
 
-CONTAINER_CMD="$*"
-if [[ -z "${CONTAINER_CMD}" ]]; then
-  CONTAINER_CMD="/bin/bash"
-fi
+CARGS=
 
 # Support for non-terminal runs
-CONTAINER_INTERACTIVE=
 if [[ -t 0 ]]; then
-  CONTAINER_INTERACTIVE="-it"
+  CARGS+="-it"
 fi
 
-setup_env "${HOME}/.gitconfig"
-CONTAINER_ARGS=$(get_args)
+CARGS+=" --rm"
+CARGS+=" --hostname tiiuae-build"
+CARGS+=" -v ${HOME}/.gitconfig:/home/$(id -un)/.gitconfig"
 
-${CONTAINER_RUNNER} run --rm -h tiiuae-build \
-  ${CONTAINER_INTERACTIVE} \
-  -v ${WORKSPACE_DIR}:/workspace:z \
-  ${CONTAINER_ARGS} \
-  tiiuae/build:latest ${CONTAINER_CMD}
+# Container engine specific flags
+if [[ "${CENGINE}" -eq "podman" ]]; then
+  CARGS+=" --userns=keep-id"
+else
+  CARGS+=" -u $(id -u):$(id -g)"
+fi
+
+if [[ -e "${SSH_AUTH_SOCK}" ]]; then
+
+  auth_sock=
+
+  if [[ -L "${SSH_AUTH_SOCK}" ]]; then
+    # Is a link file
+    auth_sock="$(readlink -f "${SSH_AUTH_SOCK}" 2>/dev/null)"
+    auth_sock="$(realpath "${auth_sock}")"
+  else
+    # Else normal file
+    auth_sock="$(realpath "${SSH_AUTH_SOCK}")"
+  fi
+
+  if [[ -n "${auth_sock}" ]]; then
+    CARGS+=" -v ${auth_sock}:/ssh-agent"
+    CARGS+=" -e SSH_AUTH_SOCK=/ssh-agent"
+  fi
+fi
+
+${CENGINE} run \
+  ${CARGS} \
+  -e CENGINE=${CENGINE} \
+  -e IN_CONTAINER=true \
+  -v ${WORKSPACE_ROOT}:/workspace:z \
+  ${CIMAGE} \
+  ${CEXEC}
