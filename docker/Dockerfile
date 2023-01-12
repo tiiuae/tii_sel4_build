@@ -103,6 +103,7 @@ RUN \
         qemu \
         qemu-utils \
         qemu-system-common \
+        qemu-system-misc \
         qemu-system-x86 \
         qemu-system-arm
 

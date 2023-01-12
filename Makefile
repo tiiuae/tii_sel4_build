@@ -17,7 +17,7 @@ ifndef CENGINE_EXEC
 	CENGINE_RUN_FLAGS += --rm -it
 endif
 
-CENGINE_BUILD_CTX ?= $(WORKSPACE_ROOT)
+CENGINE_BUILD_CTX ?= $(WORKSPACE_ROOT)/docker
 
 
 # Extra arguments to pass depending if we have Docker or Podman  - these
@@ -93,8 +93,8 @@ container:
 .PHONY: shell
 shell:
 	@docker/enter_container.sh \
-	$(CENGINE) \
 	$(WORKSPACE_ROOT) \
+	$(CENGINE) \
 	$(IMAGE):$(IMAGE_TAG) \
 	$(CENGINE_EXEC)
 

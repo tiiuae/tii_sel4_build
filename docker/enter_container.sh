@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
-set -x
+#set -x
 
 SCRIPT_DIR="$(dirname $(realpath $0))/../../scripts"
-echo "$SCRIPT_DIR"
 . "${SCRIPT_DIR}"/utils.sh
 
 [[ "$#" -lt 3 ]] && die "Too few arguments!"

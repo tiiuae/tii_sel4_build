@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -ex
+set -e
+#set -x
 
 # Find utility functions
 SCRIPT_DIR="$(realpath $0)"
