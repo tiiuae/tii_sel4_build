@@ -6,7 +6,7 @@ rpi4_defconfig:
 	@echo 'CROSS_COMPILE=aarch64-linux-gnu-' >> .config
 
 rpi4_trace_defconfig: rpi4_defconfig
-	@echo 'SEL4_TRACE=ON' >> .config
+	@echo 'SEL4_BUILD_OPTIONS_FILE=tii_sel4_build/hardware/rpi4/sel4-trace-build.config' >> .config
 
 build_camkes: .config
 	@scripts/build_camkes.sh

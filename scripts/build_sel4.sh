@@ -27,11 +27,17 @@ mkdir -p "${BUILDDIR}"
 
 ln -rs tools/seL4/cmake-tool/init-build.sh "${BUILDDIR}"
 ln -rs "${SRCDIR}/easy-settings.cmake" "${BUILDDIR}"
+if [ -r "${SEL4_BUILD_OPTIONS_FILE}" ]; then
+  ln -rs "${SEL4_BUILD_OPTIONS_FILE}" "${BUILDDIR}/extra-options.config"
+fi
 
 cd "${BUILDDIR}" || exit 2
 
-if [ "x${SEL4_TRACE}" = "xON" ]; then
-  TRACE="-DKernelArmExportPMUUser=ON -DKernelBenchmarks=track_kernel_entries"
+
+EXTRA_BUILD_OPTIONS=""
+if [ -r "extra-options.config" ]; then
+  echo "SOURCE BUILD OPTIONS!"
+  EXTRA_BUILD_OPTIONS="$(tr '\n' ' ' < extra-options.config)"
 fi
 
 # shellcheck disable=SC2068
@@ -40,7 +46,7 @@ fi
   -DAARCH64=1 \
   -DPLATFORM="${PLATFORM}" \
   -DCROSS_COMPILER_PREFIX="${CROSS_COMPILE}" \
-  ${TRACE} \
+  ${EXTRA_BUILD_OPTIONS} \
   $@
 
 ninja
