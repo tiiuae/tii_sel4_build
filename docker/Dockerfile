@@ -80,6 +80,22 @@ RUN apt-get -y install \
         gcc-aarch64-linux-gnu \
         g++-aarch64-linux-gnu
 
+# sel4cp requirements
+COPY sel4cp-python-requirements.txt .
+# sel4cp insists PyOxidizer being installed with same prefix as Python,
+# so don't try to change this path.
+RUN pip3 install --prefix /usr -r sel4cp-python-requirements.txt
+
+RUN apt-get -y install \
+        musl \
+        musl-dev \
+        musl-tools \
+        pandoc \
+        texlive-latex-base \
+        texlive-fonts-recommended \
+        texlive-latex-recommended \
+        texlive-latex-extra
+
 RUN echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && locale-gen
 RUN useradd -m -d /home/build -s /bin/bash -G sudo -u 1000 build
 RUN echo 'build:build' | chpasswd
