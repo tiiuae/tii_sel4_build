@@ -68,6 +68,12 @@ RUN apt-get -y install \
 RUN apt-get -y install \
         screen
 
+# utilities to install toolchains from net
+RUN \
+    apt-get -y install \
+        curl \
+        stow
+
 # Yocto build dependencies will uninstall these cross-compilers,
 # so install them after everything else.
 RUN apt-get -y install \
