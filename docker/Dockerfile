@@ -96,6 +96,15 @@ RUN apt-get -y install \
         texlive-latex-recommended \
         texlive-latex-extra
 
+# baremetal toolchain and QEMU for sel4cp on aarch64
+RUN \
+    curl -L -O https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-x86_64-aarch64-none-elf.tar.xz && \
+    tar -C /usr/local/stow -xJpf arm-gnu-toolchain-12.2.rel1-x86_64-aarch64-none-elf.tar.xz && \
+    stow -d /usr/local/stow arm-gnu-toolchain-12.2.rel1-x86_64-aarch64-none-elf
+
+RUN apt-get -y install \
+    qemu-system-arm
+
 RUN echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && locale-gen
 RUN useradd -m -d /home/build -s /bin/bash -G sudo -u 1000 build
 RUN echo 'build:build' | chpasswd
