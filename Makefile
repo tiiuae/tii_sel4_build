@@ -31,7 +31,7 @@ sel4test:
 	docker
 
 docker:
-	docker build docker -t tiiuae/build:latest
+	@docker/build.sh
 
 linux-image:
 	@scripts/build_yocto.sh
