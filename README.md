@@ -2,6 +2,13 @@
 
 These instructions have been tested with Ubuntu 20.10 desktop and Fedora 33.
 
+**Table of contents:**
+- [Setting up your computer](#setup)
+- [Building sel4test and CAmkES examples](#camkes)
+- [Booting over network](#boot)
+- [Try out seL4 Core Platform!](#sel4cp)
+
+<a id="setup"></a>
 # Setting up the build environment
 
 ## Update your computer and install prerequisites
@@ -64,6 +71,7 @@ host% <b>sudo usermod -aG docker $USER</b>
 In order to supplementary group change take effect, either reboot your computer or log out and back in (the most lazy ones can
 use the ```newgrp``` command). In any case verify with the ```groups``` command.
 
+<a id="camkes"></a>
 ## Check out sources
 <pre>
 # Choose a working directory, this will be visible in the container at /workspace
@@ -115,6 +123,7 @@ host% <b>make shell</b>
 container% <b>aarch64-linux-gnu-objdump -D rpi4_sel4test/kernel/kernel.elf</b>
 </pre>
 
+<a id="boot"></a>
 ## Network booting
 
 This seL4 playground boots from network.
@@ -340,3 +349,90 @@ drwxr-xr-x. 4 root root    62 Dec 10 11:49 sysroots/
 </pre>
 
 All tools and libraries can now be found from ```/opt/poky/3.4/sysroots/```
+
+<a id="sel4cp"></a>
+# seL4 Core Platform
+
+Use ```wip/hlyytine-sel4cp``` manifest branch:
+
+<pre>
+host% <b>export WORKSPACE=~/sel4</b>
+host% <b>mkdir ${WORKSPACE} && cd ${WORKSPACE}</b>
+host% <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git -b wip/hlyytine-sel4cp</b>
+host% <b>repo sync</b>
+</pre>
+
+Build the sel4cp SDK:
+
+<pre>
+host% <b>make shell</b>
+container% <b>make sel4cp_sdk</b>
+</pre>
+
+In addition to board support files, SDK also contains binary named ```sel4cp```, which is compiled
+from Python sources with PyOxidizer. The build script does not handle dependencies very well, so if you
+want to modify the Python sources, remove the ```sel4cp``` in the release directory to recompile the
+Python sources.
+
+Build the example for Raspberry Pi 4:
+
+<pre>
+container% <b>make rpi4_defconfig</b>
+container% <b>make sel4cp_hello</b>
+</pre>
+
+The resulting image is ```${WORKSPACE}/rpi4_sel4cp_hello/loader.img```. To boot the example on hardware,
+copy the file to your TFTP directory and use the following command in rpi4's u-boot:
+
+<pre>
+U-Boot> <b>setenv loadaddr 0x10000000 && tftpboot loader.img && go ${loadaddr}</b>
+Using ethernet@7d580000 device
+TFTP from server 192.168.5.1; our IP address is 192.168.5.212
+Filename 'image'.
+Load address: 0x10000000
+Loading: ##################################################  2.4 MiB
+         8.9 MiB/s
+done
+Bytes transferred = 2477672 (25ce68 hex)
+## Starting application at 0x10000000 ...
+LDR|INFO: altloader for seL4 starting
+LDR|INFO: Flags:                0x0000000000000000
+LDR|INFO: Kernel:      entry:   0xffffff8001000000
+LDR|INFO: Root server: physmem: 0x000000000124d000 -- 0x0000000001254000
+LDR|INFO:              virtmem: 0x000000008a000000 -- 0x000000008a007000
+LDR|INFO:              entry  : 0x000000008a000000
+LDR|INFO: region: 0x00000000   addr: 0x0000000001000000   size: 0x0000000000249000   offset: 0x0000000000000000   type: 0x0000000000000001
+LDR|INFO: region: 0x00000001   addr: 0x000000000124d000   size: 0x00000000000060f0   offset: 0x0000000000249000   type: 0x0000000000000001
+LDR|INFO: region: 0x00000002   addr: 0x0000000001249000   size: 0x0000000000000960   offset: 0x000000000024f0f0   type: 0x0000000000000001
+LDR|INFO: region: 0x00000003   addr: 0x000000000124a000   size: 0x0000000000000308   offset: 0x000000000024fa50   type: 0x0000000000000001
+LDR|INFO: region: 0x00000004   addr: 0x000000000124b000   size: 0x0000000000001020   offset: 0x000000000024fd58   type: 0x0000000000000001
+LDR|INFO: copying region 0x00000000
+LDR|INFO: copying region 0x00000001
+LDR|INFO: copying region 0x00000002
+LDR|INFO: copying region 0x00000003
+LDR|INFO: copying region 0x00000004
+LDR|INFO: CurrentEL=EL2
+LDR|INFO: Resetting CNTVOFF
+LDR|INFO: Dropping from EL2 to EL1
+LDR|INFO: CurrentEL=EL1
+LDR|INFO: Dropped to EL1 successfully
+LDR|INFO: enabling MMU
+LDR|INFO: jumping to kernel
+Bootstrapping kernel
+available phys memory regions: 3
+  [1000000..3b400000]
+  [40000000..fc000000]
+  [100000000..200000000]
+reserved virt address space regions: 3
+  [ffffff8001000000..ffffff8001249000]
+  [ffffff8001249000..ffffff800124d000]
+  [ffffff800124d000..ffffff8001254000]
+Booting all finished, dropped to user space
+MON|INFO: seL4 Core Platform Bootstrap
+MON|INFO: bootinfo untyped list matches expected list
+MON|INFO: Number of bootstrap invocations: 0x00000009
+MON|INFO: Number of system invocations:    0x00000022
+MON|INFO: completed bootstrap invocations
+MON|INFO: completed system invocations
+hello, world
+</pre>
