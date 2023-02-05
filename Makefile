@@ -25,9 +25,17 @@ vm_multi:
 sel4test:
 	make build_sel4test
 
+sel4cp_sdk:
+	@cd sel4cp/sel4cp && python build_sdk.py --sel4=/workspace/sel4cp/sel4
+
+sel4cp_hello: .config
+	@scripts/build_sel4cp.sh hello
+
 .PHONY: \
 	rpi4_defconfig \
 	rpi4_trace_defconfig \
+	sel4cp_sdk \
+	sel4cp_hello \
 	docker
 
 docker:
