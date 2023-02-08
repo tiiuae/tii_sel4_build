@@ -22,7 +22,7 @@ runs:
     using: "composite"
     steps:
       - name: Preparing artifactory for upload
-        uses: "jfrog/setup-jfrog-cli@v2"
+        uses: "jfrog/setup-jfrog-cli@v3"
       - name: Pushing to artifactory
         shell: bash
         env:

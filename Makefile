@@ -5,6 +5,9 @@ rpi4_defconfig:
 	@echo 'NUM_NODES=4' >> .config
 	@echo 'CROSS_COMPILE=aarch64-linux-gnu-' >> .config
 
+rpi4_trace_defconfig: rpi4_defconfig
+	@echo 'SEL4_TRACE=ON' >> .config
+
 build_camkes: .config
 	@scripts/build_camkes.sh
 
@@ -22,7 +25,10 @@ vm_multi:
 sel4test:
 	make build_sel4test
 
-.PHONY: docker
+.PHONY: \
+	rpi4_defconfig \
+	rpi4_trace_defconfig \
+	docker
 
 docker:
 	docker build docker -t tiiuae/build:latest

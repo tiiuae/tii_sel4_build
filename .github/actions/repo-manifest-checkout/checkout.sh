@@ -92,4 +92,4 @@ fi
 repo sync ${INPUT_REPO_SYNC_OPTS}
 
 echo "::endgroup::"
-echo "::set-output name=manifest-xml::$(repo manifest -r | escape_newlines)"
+echo "manifest-xml=$(repo manifest -r | escape_newlines)" >> "$GITHUB_OUTPUT"
