@@ -7,7 +7,7 @@ on:
     inputs:
       manifest-url:
         description: 'Manifest repository'
-        default: 'git@github.com:amalx-ssrc/tii_sel4_manifest.git'
+        default: 'git@github.com:tiiuae/tii_sel4_manifest.git'
         required: false
         type: string
       manifest-revision:
@@ -57,7 +57,7 @@ jobs:
       - name: Checkout code for using local actions
         uses: actions/checkout@v2
         with:
-          repository: amalx-ssrc/tii_sel4_build
+          repository: tiiuae/tii_sel4_build
           ref: tii/development
 
       - name: Checkout code
@@ -107,7 +107,7 @@ jobs:
           WORKSPACE: './workspace'
 
       - name: Publish images to artifactory
-        if:  ${{ github.repository }} == 'amalx-ssrc/tii_sel4_build' && ${{ github.event_name }} == 'workflow_dispatch'
+        if:  ${{ github.repository }} == 'tiiuae/tii_sel4_build' && ${{ github.event_name }} == 'workflow_dispatch'
         uses: ./.github/actions/artifact-publish
         with:
           rt-user: ${{ secrets.rt-user }}
