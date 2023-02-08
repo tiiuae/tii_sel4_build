@@ -105,6 +105,13 @@ RUN \
 RUN apt-get -y install \
     qemu-system-arm
 
+# baremetal toolchain and QEMU for sel4cp on riscv{32,64}
+RUN apt-get -y install \
+    gcc-riscv64-unknown-elf
+
+RUN apt-get -y install \
+    qemu-system-riscv64
+
 RUN echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && locale-gen
 RUN useradd -m -d /home/build -s /bin/bash -G sudo -u 1000 build
 RUN echo 'build:build' | chpasswd
