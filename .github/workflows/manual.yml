@@ -1,0 +1,25 @@
+name: Manual Build 
+
+on:
+  workflow_dispatch:
+    inputs:
+      REPO_OVERRIDE:
+        description: Repository URL(owner/repo_name:revision)
+        required: false
+        type: string
+      BRANCH_OVERRIDE:
+        description: Revision(Branch name, SHA or tag)
+        required: false
+        type: string
+
+jobs:
+  build-vm-images:
+    uses: ./.github/workflows/build-vm-images.yml
+    with:
+      repo-override: ${{ inputs.REPO_OVERRIDE }}
+      branch-override: ${{ inputs.BRANCH_OVERRIDE }}
+    secrets:
+      ssh-key: ${{ secrets.CI_SSH_KEY }}
+      rt-user: ${{ secrets.RT_USER }}
+      rt-api-key: ${{ secrets.RT_APIKEY }}
+      rt-url: ${{ secrets.RT_URL }}
