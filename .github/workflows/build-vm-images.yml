@@ -20,6 +20,16 @@ on:
         default: 'default.xml'
         required: false
         type: string
+      repo-override:
+        description: 'Repository url with name and revision'
+        default: ''
+        required: false
+        type: string
+      branch-override:
+        description: 'Feature branch name'
+        type: string
+        default: ''
+        required: false
       platform:
         description: 'Platform config'
         default: 'rpi4_defconfig'
@@ -46,6 +56,9 @@ jobs:
     steps:
       - name: Checkout code for using local actions
         uses: actions/checkout@v3.3.0
+        with:
+          repository: tiiuae/tii_sel4_build
+          ref: tii/development
 
       - name: Checkout code
         id: checkout
@@ -57,6 +70,8 @@ jobs:
           SSH_KEY: ${{ secrets.ssh-key }}
           SSH_KEYSCAN_URL: 'github.com'
           WORKSPACE: './workspace'
+          REPO_OVERRIDE: ${{ inputs.repo-override }}
+          BRANCH_OVERRIDE: ${{ inputs.branch-override }}
 
       - name: Dump build info
         run: |
@@ -92,6 +107,7 @@ jobs:
           WORKSPACE: './workspace'
 
       - name: Publish images to artifactory
+        if:  ${{ github.repository }} == 'tiiuae/tii_sel4_build' && ${{ github.event_name }} == 'workflow_dispatch'
         uses: ./.github/actions/artifact-publish
         with:
           rt-user: ${{ secrets.rt-user }}
