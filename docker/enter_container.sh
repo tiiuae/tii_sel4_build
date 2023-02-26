@@ -19,6 +19,7 @@ if test -t 0; then
 fi
 
 exec docker run --rm ${INTERACTIVE} \
+  `echo ${DOCKER_EXPORT} | xargs -Ivar -- echo --env var` \
   -v ${DIR}:/workspace:z \
   -v ${HOME}/.ssh:/home/build/.ssh:z \
   -v ${HOME}/.gitconfig:/home/build/.gitconfig:z \
