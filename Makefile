@@ -1,12 +1,18 @@
-all: vm_minimal vm_multi .config
+TARGETS = vm_minimal vm_multi
 
-rpi4_defconfig:
-	@echo 'PLATFORM=rpi4' > .config
-	@echo 'NUM_NODES=4' >> .config
-	@echo 'CROSS_COMPILE=aarch64-linux-gnu-' >> .config
+include $(wildcard projects/*/Makefile.tii_sel4_build)
 
-rpi4_trace_defconfig: rpi4_defconfig
-	@echo 'SEL4_TRACE=ON' >> .config
+all:
+	@echo Possible make targets are:
+	@echo
+	@for target in $(TARGETS); do echo "  $$target"; done
+	@echo
+
+%:: configs/%
+	@cp $< .config
+
+DOCKER_EXPORT = CAMKES_VM_APP
+export DOCKER_EXPORT
 
 build_camkes: .config
 	@scripts/build_camkes.sh
@@ -14,20 +20,17 @@ build_camkes: .config
 build_sel4test: .config
 	@scripts/build_sel4test.sh
 
-include $(wildcard projects/*/Makefile.tii_sel4_build)
-
-vm_minimal:
-	CAMKES_VM_APP=vm_minimal make build_camkes
-
-vm_multi:
-	CAMKES_VM_APP=vm_multi make build_camkes
+vm_%: phony_explicit
+	CAMKES_VM_APP=$@ make build_camkes
 
 sel4test:
 	make build_sel4test
 
+phony_explicit:
+
 .PHONY: \
-	rpi4_defconfig \
-	rpi4_trace_defconfig \
+	all \
+	phony_explicit \
 	docker
 
 docker:

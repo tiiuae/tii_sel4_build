@@ -2,11 +2,7 @@
 
 set -e
 
-. `pwd`/.config
-
-if test "x`pwd`" != "x/workspace"; then
-  exec docker/enter_container.sh `pwd` scripts/build_guest_rootfs.sh $@
-fi
+. ${0%/*}/functions.sh
 
 BUILDDIR=/workspace/buildroot/build-${PLATFORM}
 SRCDIR=/workspace/projects/camkes-vm-images/${PLATFORM}
