@@ -174,26 +174,20 @@ host$ <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git -b tii/develop
 host$ <b>repo sync</b>
 host$ <b>make docker</b>
 
-# build driver-VM and user-VM images
-host$ <b>make shell</b>
-container$ <b>cd vm-images</b>
-container$ <b>. setup.sh</b>
-container$ <b>bitbake vm-image-driver</b>
-container$ <b>bitbake vm-image-boot</b>
+# configure for Raspberry Pi 4
+host$ <b>make rpi4_defconfig</b>
 
-# copy kernel and initramfs image in place, and build qemu seL4 vm_qemu_virtio
-container$ <b>cp vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/Image projects/camkes-vm-images/rpi4/linux</b>
-container$ <b>cp vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/vm-image-boot-vm-raspberrypi4-64.cpio.gz projects/camkes-vm-images/rpi4/rootfs.cpio.gz</b>
-container$ <b>make rpi4_defconfig</b>
-container$ <b>make vm_qemu_virtio</b>
-# exit container
-container$ <b>exit</b>
+# build VM root filesystems, Linux kernel and initramfs
+host$ <b>make linux-image</b>
+
+# build qemu seL4 vm_qemu_virtio
+host$ <b>make vm_qemu_virtio</b>
 
 # copy seL4 image to TFTP directory
 host$ <b>cp rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711 /var/lib/tftpboot</b>
 
 # expose driver-VM image via NFS (update your directory to command)
-host$ <b>tar -C /srv/nfs/rpi4 -xjpvf vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/vm-image-driver-raspberrypi4-64.tar.bz2</b>
+host$ <b>tar -C /srv/nfs/rpi4 -xjpvf /workspace/projects/camkes-vm-images/rpi4/vm-image-driver.tar.bz2</b>
 
 # create host/guest shared directory
 host$ <b>mkdir /srv/nfs/rpi4/host</b>
@@ -222,37 +216,28 @@ Within user-VM, the ```screen``` control character has been mapped to ^B.
 
 # Rebuilding guest VM components
 
-We have migrated over to Yocto build system, which builds both the kernel and the
-root filesystem for the guest VM. As such the old helper scripts
-```tii_sel4_build/scripts/build_guest_linux.sh``` and
-```tii_sel4_build/scripts/build_guest_rootfs.sh``` are deleted and you need to
-use the Yocto build system directly.
+We use Yocto to build guest root filesystems, Linux kernel and initramfs. Buildroot
+is not supported.
+
+On a first run building everything will take several hours and you need at
+least 100 GB disk space for the build.  After the build finishes, you will find
+everything ```/workspace/projects/camkes-vm-images/rpi4```.
 
 <pre>
-host% <b>make shell</b>
-container% <b>cd vm-images</b>
-# This command will set up your environment for Yocto builds, so remember
-# to execute it every time you enter the container.
-container% <b>source setup.sh</b>
-container% <b>bitbake vm-image-driver</b>
+host% <b>make linux-image</b>
+
+ ...
+
+Here are your images in /workspace/projects/camkes-vm-images/rpi4:
+total 12
+lrwxrwxrwx. 1 build build  69 Feb 28 14:12 linux -> /workspace/vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/Image
+lrwxrwxrwx. 1 build build 104 Feb 28 14:12 rootfs.cpio.gz -> /workspace/vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/vm-image-boot-vm-raspberrypi4-64.cpio.gz
+lrwxrwxrwx. 1 build build 106 Feb 28 14:16 vm-image-driver.tar.bz2 -> /workspace/vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/vm-image-driver-vm-raspberrypi4-64.tar.bz2
 </pre>
 
-Yocto will download and build toolchains and then uses those to build all
-packages (including our seL4 related driver-VM guest extensions). On a first run
-it will take several hours and you need at least 100 GB disk space for the build.
-After the build finishes, you will find the kernel at
-```/workspace/vm-images/build/tmp/deploy/images/raspberrypi4-64/Image-raspberrypi4-64.bin```.
-
-**_NOTE:_** You must copy this kernel image to
-```${WORKSPACE}/projects/camkes-vm-examples/rpi4/linux``` manually until we get
-the build system automation for this.  The guest kernel image is (as of writing
-this) embedded into seL4 boot image, therefore you must build the driver VM
-image and copy the image before compiling the seL4 image.
-
-The root filesystem will be located at
-```/workspace/vm-images/build/tmp/deploy/images/raspberrypi4-64/vm-image-driver-raspberrypi4-64.tar.bz2```.
-The root is mounted over NFS and as such you do not need to copy it to ```camkes-vm-examples```. See instructions
-below on how to make this root filesystem available to NFS clients.
+The driver-VM root filesystem ```vm-image-driver.tar.bz2``` will be mounted
+over NFS. See instructions below on how to make this root filesystem available
+to NFS clients.
 
 # Customizing Yocto packages
 
