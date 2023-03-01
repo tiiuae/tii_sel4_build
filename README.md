@@ -159,8 +159,324 @@ by default.
 
 ### Setup Raspberry Pi 4 for network booting
 
-| TBD: add Raspberry Pi 4 DHCP+TFTP+NFS booting instructions! |
+| TODO: AFAIK, Yocto currently builds a SD-card image which can be directly flashed to the SD-card with dd. Add instructions for that. |
 | --- |
+
+
+First, take a suitable micro SD-card to use for U-Boot.
+Something like 2GB card will work just fine. Insert it to your PC, 
+using an external SD-card adapter if necessary. 
+
+### Prepare SD-card partitions
+
+Find out the block device name using `lsblk`. In this example,
+the card is allocated a descriptor of `/dev/sda`. Format the card using `fdisk`:
+
+<pre>
+host% <b>sudo fdisk /dev/sda</b>
+[sudo] password for XXX: 
+
+Welcome to fdisk (util-linux 2.37.2).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+# Print existing partition table with p
+# Delete any existing partitions with d
+Command (m for help): p
+Disk /dev/sda: 14,87 GiB, 15962472448 bytes, 31176704 sectors
+Disk model: Transcend       
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0xcb4c447f
+
+Device     Boot  Start     End Sectors  Size Id Type
+/dev/sda1  *      2048  526335  524288  256M  b W95 FAT32
+/dev/sda2       526336 2623487 2097152    1G 83 Linux
+
+Command (m for help): d
+Partition number (1,2, default 2): 1
+
+Partition 1 has been deleted.
+
+Command (m for help): d
+Selected partition 2
+Partition 2 has been deleted.
+
+# Create 2 new partitions on the card with n
+# First is a boot partition of type W95 FAT32, size 256MB
+# Second is a root partiton of type Linux, using rest of the
+# available space
+ommand (m for help): n
+Partition type
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended (container for logical partitions)
+Select (default p): p
+Partition number (1-4, default 1): 1
+First sector (2048-31176703, default 2048): 2048
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-31176703, default 31176703): +256M
+
+Created a new partition 1 of type 'Linux' and of size 256 MiB.
+Partition #1 contains a vfat signature.
+
+Do you want to remove the signature? [Y]es/[N]o: y
+
+The signature will be removed by a write command.
+
+Command (m for help): t
+Selected partition 1
+Hex code or alias (type L to list all): 0b
+Changed type of partition 'Linux' to 'W95 FAT32'.
+
+Command (m for help): n
+Partition type
+   p   primary (1 primary, 0 extended, 3 free)
+   e   extended (container for logical partitions)
+Select (default p): p
+Partition number (2-4, default 2): 2
+First sector (526336-31176703, default 526336): 
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (526336-31176703, default 31176703): 
+
+Created a new partition 2 of type 'Linux' and of size 14,6 GiB.
+Partition #2 contains a ext3 signature.
+
+Do you want to remove the signature? [Y]es/[N]o: y
+
+The signature will be removed by a write command.
+
+Command (m for help): t
+Partition number (1,2, default 2): 2
+Hex code or alias (type L to list all): 83
+
+Changed type of partition 'Linux' to 'Linux'.
+
+# Set bootable flag to the first partition
+Command (m for help): a
+Partition number (1,2, default 2): 1
+
+The bootable flag on partition 1 is enabled now.
+
+# Check the partition layout
+Command (m for help): p
+Disk /dev/sda: 14,87 GiB, 15962472448 bytes, 31176704 sectors
+Disk model: Transcend       
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0xcb4c447f
+
+Device     Boot  Start      End  Sectors  Size Id Type
+/dev/sda1  *      2048   526335   524288  256M  b W95 FAT32
+/dev/sda2       526336 31176703 30650368 14,6G 83 Linux
+
+Filesystem/RAID signature on partition 1 will be wiped.
+Filesystem/RAID signature on partition 2 will be wiped.
+
+# Write changes to the card
+Command (m for help): w
+The partition table has been altered.
+Calling ioctl() to re-read partition table.
+Syncing disks.
+</pre>
+
+
+Now you should have 2 partitions on the SD-card:
+<pre>
+host% <b>lsblk /dev/sda</b>
+NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sda      8:0    1 14,9G  0 disk 
+├─sda1   8:1    1  256M  0 part 
+└─sda2   8:2    1 14,6G  0 part 
+</pre>
+
+### Format the SD-card partitions
+
+Format the boot partition to FAT32:
+<pre>
+host% <b>sudo mkdosfs -F 32 -n BOOT /dev/sda1</b>
+[sudo] password for XXX: 
+mkfs.fat 4.2 (2021-01-31)
+</pre>
+
+Format the root partition to ext3:
+<pre>
+host% <b>udo mkfs -t ext3 -L ROOT /dev/sda2</b>
+[sudo] password for XXX: 
+mke2fs 1.46.5 (30-Dec-2021)
+Creating filesystem with 3831296 4k blocks and 958464 inodes
+Filesystem UUID: 8789de92-b900-4b87-9a04-87483d7d4e79
+Superblock backups stored on blocks: 
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208
+
+Allocating group tables: done                            
+Writing inode tables: done                            
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+</pre>
+
+
+### Mount the partitions for copying files
+
+Use the GUI mounting options on your OS, or
+create mount directories where to mount the partitions.
+In this example, `/mnt` directory is used.
+
+<pre>
+host% <b>sudo mkdir /mnt/sd_boot</b>
+host% <b>sudo mkdir /mnt/sd_root</b>
+</pre>
+
+Mount the partitions:
+<pre>
+host% <b>sudo mount /dev/sda1 /mnt/sd_boot</b>
+host% <b>sudo mount /dev/sda2 /mnt/sd_root</b>
+</pre>
+
+Copy the boot partition files from `hardware/rpi4` directory
+to the boot partition:
+
+<pre>
+host% <b>sudo cp -vR tii_sel4_build/hardware/rpi4/* /mnt/sd_boot/</b>
+'tii_sel4_build/hardware/rpi4/bcm2711-rpi-4-b.dtb' -> '/mnt/sd_boot/bcm2711-rpi-4-b.dtb'
+'tii_sel4_build/hardware/rpi4/bootcode.bin' -> '/mnt/sd_boot/bootcode.bin'
+'tii_sel4_build/hardware/rpi4/config.txt' -> '/mnt/sd_boot/config.txt'
+'tii_sel4_build/hardware/rpi4/fixup4.dat' -> '/mnt/sd_boot/fixup4.dat'
+'tii_sel4_build/hardware/rpi4/fixup.dat' -> '/mnt/sd_boot/fixup.dat'
+'tii_sel4_build/hardware/rpi4/start4.elf' -> '/mnt/sd_boot/start4.elf'
+'tii_sel4_build/hardware/rpi4/start.elf' -> '/mnt/sd_boot/start.elf'
+'tii_sel4_build/hardware/rpi4/u-boot.bin' -> '/mnt/sd_boot/u-boot.bin'
+'tii_sel4_build/hardware/rpi4/uboot.env' -> '/mnt/sd_boot/uboot.env'
+host% <b>sync</b>
+</pre>
+
+| TODO: add instructions to copy RootFS files! |
+|---|
+
+Now the partitions can be unmounted, and the SD-card attached to the RPi.
+
+<pre>
+host% <b>sudo umount /mnt/sd_boot/</b>
+host% <b>sudo umount /mnt/sd_root/</b>
+</pre>
+
+
+### Setup U-Boot for TFTP boot
+
+Insert the SD-card to the RPi, and connect a serial cable 
+between RPi and PC. Open a serial console emulator of your choice,
+here `minicom` is used.
+
+>**Note**
+>Note that on most Linux distros, `/dev/ttyUSBx` devices have a
+group membership of `dialout`. In order to connect to the serial port,
+you need to be a member of said group or use sudo to connect.
+
+>**Note**
+>The default image type configured for RPi4 is now EFI. This means that
+you have to use `bootefi` command for starting the image instead of the
+traditional `bootelf`!
+
+Now the U-Boot environment must be configured to load
+the boot image via TFTP. Power on the RPi, and be prepared to 
+hit any button to stop U-Boot from autobooting when it starts. 
+
+<pre>
+host% <b>minicom -b 115200 -D /dev/ttyUSB0/</b>
+
+Welcome to minicom 2.8
+
+OPTIONS: I18n 
+Port /dev/ttyUSB0, 16:30:32
+
+Press CTRL-A Z for help on special keys
+
+U-Boot 2022.10 (Nov 23 2022 - 02:23:58 +0200)
+
+DRAM:  7.9 GiB
+RPI 4 Model B (0xd03114)
+Core:  210 devices, 16 uclasses, devicetree: board
+MMC:   mmcnr@7e300000: 1, mmc@7e340000: 0
+Loading Environment from FAT... OK
+In:    serial
+Out:   serial
+Err:   serial
+Net:   eth0: ethernet@7d580000
+PCIe BRCM: link up, 5.0 Gbps x1 (SSC)
+starting USB...
+Bus xhci_pci: Register 5000420 NbrPorts 5
+Starting the controller
+USB XHCI 1.00
+scanning bus xhci_pci for devices... 2 USB Device(s) found
+       scanning usb for storage devices... 0 Storage Device(s) found
+Hit any key to stop autoboot:  0 
+U-Boot> 
+</pre>
+
+Edit the environment value `bootcmd_capdl`,
+and set its contents to:
+
+<pre>
+run boot_net_usb_start; run boot_pci_enum; setenv autoload no; if dhcp; then echo "TFTP boot..."; if tftp ${loadaddr} capdl-loader-image-arm-bcm2711; then bootefi ${loadaddr} {fdt_addr}; fi; fi;
+</pre>
+
+<pre>
+U-Boot> <b>editenv bootcmd_capdl</b>
+edit: ...
+U-Boot> <b>saveenv</b>
+Saving Environment to FAT... OK
+U-Boot> <b>editenv bootcmd</b>
+edit: run bootcmd_capdl;
+U-Boot> <b>saveenv</b>
+Saving Environment to FAT... OK
+</pre>
+
+
+Now if everything is configured correctly, RPi should start
+the image simply with:
+<pre>
+U-Boot> <b>boot</b>
+BOOTP broadcast 1
+BOOTP broadcast 2
+BOOTP broadcast 3
+DHCP client bound to address 192.168.5.200 (1034 ms)
+TFTP boot...
+Using ethernet@7d580000 device
+TFTP from server 192.168.5.1; our IP address is 192.168.5.200
+Filename 'capdl-loader-image-arm-bcm2711'.
+Load address: 0x1000000
+Loading: T T ##################################################  38.8 MiB
+         1.4 MiB/s
+done
+Bytes transferred = 40665224 (26c8088 hex)
+Card did not respond to voltage select! : -110
+No EFI system partition
+Booting /capdl-loader-image-arm-bcm2711
+
+ELF-loader started on CPU: ARM Ltd. Cortex-A72 r0p3
+  paddr=[37846000..ffffffffffffffff]
+  dtb=7f00000
+Looking for DTB in CPIO archive...found at 37a4ffb0.
+Loaded DTB from 37a4ffb0.
+   paddr=[127c000..1288fff]
+ELF-loading image 'kernel' to 1000000
+  paddr=[1000000..127bfff]
+  vaddr=[8001000000..800127bfff]
+  virt_entry=8001000000
+ELF-loading image 'capdl-loader' to 1289000
+  paddr=[1289000..3921fff]
+  vaddr=[400000..2a98fff]
+  virt_entry=4092f0
+Core 1 is up with logic ID 1
+Core 2 is up with logic ID 2
+Core 3 is up with logic ID 3
+Enabling hypervisor MMU and paging
+Jumping to kernel-image entry point...
+...
+</pre>
+
+
 
 # QEMU, virtio and seL4
 
