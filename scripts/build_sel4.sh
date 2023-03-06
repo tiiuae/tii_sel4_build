@@ -1,29 +1,49 @@
-#! /bin/sh
+#!/usr/bin/env bash
 
 set -e
+#set -x
 
-. ${0%/*}/functions.sh
+# Find utility functions
+SCRIPT_DIR="$(realpath $0)"
+SCRIPT_DIR="${SCRIPT_DIR%/*}"
+. "${SCRIPT_DIR}"/utils.sh
 
-BUILDDIR=$1
-shift
+# Check env variables
+[[ -z "${WORKSPACE_ROOT}" ]] && die "Invalid workspace root directory!"
+[[ -z "${PROJECT}" ]] && die "Invalid project name!"
 
-SRCDIR=$1
+# Project directory is optional, set default if not passed
+[[ -z "${PROJECT_DIR}" ]] && PROJECT_DIR="${WORKSPACE_ROOT}/projects/${PROJECT}"
 
-rm -rf "${BUILDDIR}"
-mkdir -p "${BUILDDIR}"
+WORKSPACE_ROOT="$(realpath "${WORKSPACE_ROOT}")"
+PROJECT_DIR="$(realpath "${PROJECT_DIR}")"
 
-ln -rs tools/seL4/cmake-tool/init-build.sh "${BUILDDIR}"
-ln -rs "${SRCDIR}/easy-settings.cmake" "${BUILDDIR}"
+# Source the config file
+# shellcheck disable=SC1091
+. "${WORKSPACE_ROOT}/.config"
 
-cd "${BUILDDIR}" || exit 2
+# Set suffix to the project name
+BUILD_DIR="${WORKSPACE_ROOT}/build_${PLATFORM}_${PROJECT}"
+[[ -z "${BUILD_SYMLINK}" ]] && BUILD_SYMLINK="${WORKSPACE_ROOT}/build"
+
+# Remove old build dir and link
+#rm -rf "${BUILD_DIR}" "${BUILD_SYMLINK}"
+
+# Create new build dir and link to it
+mkdir -p "${BUILD_DIR}"
+ln -rs "${BUILD_DIR}" "${BUILD_SYMLINK}"
+
+# Link settings and build init script to the build dir
+ln -rs "${WORKSPACE_ROOT}/tools/seL4/cmake-tool/init-build.sh" "${BUILD_DIR}"
+ln -rs "${PROJECT_DIR}/easy-settings.cmake" "${BUILD_DIR}"
+
+# Go to the build directory and start building
+cd "${BUILD_DIR}"
 
 # shellcheck disable=SC2068
-./init-build.sh \
-  -B . \
-  ${CMAKE_FLAGS} \
-  $@
-
+#./init-build.sh -B . -DAARCH64=1 -DPLATFORM="${PLATFORM}" -DCROSS_COMPILER_PREFIX="${CROSS_COMPILE}" $@
+./init-build.sh -B . -DPLATFORM="${PLATFORM}" -DRELEASE=FALSE -DSIMULATION=TRUE
 ninja
 
-echo "Here are your binaries in ${BUILDDIR}/images: "
-ls -l ./images
+printf "\nHere are your binaries in ${BUILD_DIR}: \n"
+ls -lA --color=auto "${BUILD_DIR}"/
