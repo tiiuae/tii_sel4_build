@@ -155,7 +155,7 @@ clean_builddirs:
 clean_images:
 	@if [[ ! $$($(CENGINE) image exists $(IMAGE)) ]]; then \
 		$(INFO_INSHELL) '$@: Removing container image "$(IMAGE)"'; \
-		$(CENGINE) rmi $(IMAGE) 2> /dev/null || true; \
+		$(CENGINE) rmi -f $(IMAGE) 2> /dev/null || true; \
 	fi
 
 
