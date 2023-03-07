@@ -157,10 +157,11 @@ subnet 192.168.5.0 netmask 255.255.255.0 {
 It is the most convenient to use TCP since the Fedora firewall will block UDP
 by default.
 
-### Setup Raspberry Pi 4 for network booting
+### Setup board for network booting
 
-| TBD: add Raspberry Pi 4 DHCP+TFTP+NFS booting instructions! |
-| --- |
+See instructions in `hardware/${PLATFORM}/README.md`:
+
+ - [Raspberry Pi 4](hardware/rpi4/README.md)
 
 # QEMU, virtio and seL4
 
@@ -184,7 +185,10 @@ host$ <b>make linux-image</b>
 host$ <b>make vm_qemu_virtio</b>
 
 # copy seL4 image to TFTP directory
-host$ <b>cp rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711 /var/lib/tftpboot</b>
+host$ <b>cp rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711 /var/lib/tftpboot/image.rpi4</b>
+
+# select bootefi command
+host$ <b>cp projects/camkes-vm-images/rpi4/bootscripts/tftpboot-bootefi.scr /var/lib/tftpboot/boot.scr.rpi4</b>
 
 # expose driver-VM image via NFS (update your directory to command)
 host$ <b>tar -C /srv/nfs/rpi4 -xjpvf /workspace/projects/camkes-vm-images/rpi4/vm-image-driver.tar.bz2</b>
