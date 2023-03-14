@@ -1,0 +1,33 @@
+---
+# Copyright 2023, Technology Innovation Institute
+
+name: Run tests on remote testbed
+description: Run tests on remote testbed
+inputs:
+  build-name:
+    description: 'Build name to save results'
+    default: 'TEST_BUILD'
+    required: false
+  build-num:
+    description: 'build number'
+    default: '259' # Debug TODO: remove
+    required: false
+  input-paths:
+    description: 'input-paths'
+    required: true
+
+runs:
+    using: "composite"
+    steps:
+      - name: Run test images
+        shell: bash
+        env:
+          BUILD_NUM: ${{ inputs.build-num }}
+          BUILD_NAME: ${{ inputs.build-name }}
+          INPUT_PATHS: ${{ inputs.input-paths}}
+        run: |
+          for input in $INPUT_PATHS; do
+            SRC=${input%%:*}
+            TST=${input#*:}
+            run_tests $TST -i ${SRC}-b${BUILD_NUM} -m ${BUILD_NAME}-b${BUILD_NUM} --usehost
+          done

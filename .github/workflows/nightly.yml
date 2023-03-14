@@ -14,3 +14,8 @@ jobs:
       rt-user: ${{ secrets.RT_USER }}
       rt-api-key: ${{ secrets.RT_APIKEY }}
       rt-url: ${{ secrets.RT_URL }}
+  run-tests:
+    uses: ./.github/workflows/run_tests.yml
+    with:
+      build-num: '259' # Debug TODO: ${{ github.run_number }}
+      build-name: 'NIGHTLYBUILD'

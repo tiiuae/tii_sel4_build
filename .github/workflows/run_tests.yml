@@ -1,0 +1,57 @@
+---
+# Copyright 2023, Technology Innovation Institute
+
+name: Run automated tests
+on:
+  push: # Debug TODO: remove
+  workflow_call:
+    inputs:
+      build-num:
+        description: 'build number to test'
+        default: '259' # Debug TODO: remove
+        required: false
+        type: string
+      build-name:
+        description: 'build name to group logs'
+        default: 'TEST_BUILD'
+        required: false
+        type: string
+
+
+
+jobs:
+  pytesthw:
+    runs-on: sqa1_test_runner
+    steps:
+      - name: Get this repo
+        uses: actions/checkout@v3
+      - name: Get tests from test repository
+        uses: actions/checkout@v3
+        with:
+          repository: tiiuae/tii_sel4_tests
+          path: workspace/tii_sel4_tests
+          ssh-key: ${{ secrets.TII_SEL4_TESTS_KEY }}
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+          cache: 'pip' # caching pip dependencies
+      - run: pip install workspace/tii_sel4_tests
+
+      - name: Get images from artifactory
+        uses: ./.github/actions/download_artifacts
+        with:
+          rt-user: ${{ secrets.RT_USER }}
+          rt-api-key: ${{ secrets.RT_APIKEY }}
+          rt-url: ${{ secrets.RT_URL }}
+          build-num: ${{ inputs.build-num || '259' }}
+          input-paths:  |
+            tii-sel4-artifacts/rpi4_vm_qemu_virtio/capdl-loader-image-arm-bcm2711:workspace/rpi4_vm_qemu_virtio/
+
+      - name: run tests
+        uses: ./.github/actions/run_tests
+        with:
+          build-num: ${{ inputs.build-num || '259' }}
+          build-name: ${{ inputs.build-name || 'TESTBUILD' }}
+          input-paths:  |
+            workspace/rpi4_vm_qemu_virtio/capdl-loader-image-arm-bcm2711:rpi4_vm_qemu_virtio
