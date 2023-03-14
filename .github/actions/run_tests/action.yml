@@ -1,0 +1,25 @@
+---
+# Copyright 2023, Technology Innovation Institute
+
+name: Run tests on remote testbed
+description: Run tests on remote testbed
+inputs:
+  build-label:
+    description: 'Build label to group the logs'
+    default: 'TEST_BUILD'
+    required: false
+  input-paths:
+    description: 'input-paths in format: { image_path:test_name }'
+    required: true
+
+runs:
+    using: "composite"
+    steps:
+      - run: echo "${{ github.action_path }}" >> $GITHUB_PATH
+        shell: bash
+      - name: Run test images
+        shell: bash
+        env:
+          BUILD_LABEL: ${{ inputs.build-label }}
+          INPUT_PATHS: ${{ inputs.input-paths }}
+        run: run_tests.sh
