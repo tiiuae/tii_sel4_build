@@ -1,0 +1,58 @@
+---
+# Copyright 2023, Technology Innovation Institute
+
+name: Run automated tests
+on:
+  workflow_call:
+    inputs:
+      build-label:
+        description: 'build label to group the logs'
+        default: 'TEST_BUILD'
+        required: true
+        type: string
+      input-paths:
+        description: 'input-paths in format: { remote_path:test_name }'
+        required: true
+        type: string
+    secrets:
+      RT_USER:
+        description: 'user account for artifactory'
+        required: true
+      RT_APIKEY:
+        description: 'api-key for artifactory'
+        required: true
+      RT_URL:
+        description: 'artifactory url'
+        required: true
+jobs:
+  pytesthw:
+    runs-on: [self-hosted, sqa1_test_runner]
+    steps:
+      - name: Get this repo
+        uses: actions/checkout@v3
+      - name: Get tests from test repository
+        uses: actions/checkout@v3
+        with:
+          repository: tiiuae/tii_sel4_tests
+          path: workspace/tii_sel4_tests
+          ssh-key: ${{ secrets.TII_SEL4_TESTS_KEY }}
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+          cache: 'pip' # caching pip dependencies
+      - run: pip install workspace/tii_sel4_tests
+
+      - name: Get images from artifactory
+        uses: ./.github/actions/download_artifacts
+        with:
+          rt-user: ${{ secrets.RT_USER }}
+          rt-api-key: ${{ secrets.RT_APIKEY }}
+          rt-url: ${{ secrets.RT_URL }}
+          input-paths: ${{ inputs.input-paths }}
+
+      - name: run tests
+        uses: ./.github/actions/run_tests
+        with:
+          build-label: ${{ inputs.build-label }}
+          input-paths: ${{ inputs.input-paths }}

@@ -14,3 +14,14 @@ jobs:
       rt-user: ${{ secrets.RT_USER }}
       rt-api-key: ${{ secrets.RT_APIKEY }}
       rt-url: ${{ secrets.RT_URL }}
+  run-tests:
+    needs: build-vm-images
+    uses: ./.github/workflows/run_tests.yml
+    secrets:
+      RT_USER: ${{ secrets.RT_USER }}
+      RT_APIKEY: ${{ secrets.RT_APIKEY }}
+      RT_URL: ${{ secrets.RT_URL }}
+    with:
+      build-label: 'NIGHTLYBUILD'
+      input-paths: |
+        tii-sel4-artifacts/rpi4_vm_qemu_virtio/capdl-loader-image-arm-bcm2711-b${{ github.run_number }}:rpi4_vm_qemu_virtio
