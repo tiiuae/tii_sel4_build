@@ -4,22 +4,40 @@ These instructions have been tested with Ubuntu 20.10 desktop and Fedora 33.
 
 # Setting up the build environment
 
+In the example commands below, you will see prompts ```@host``` and
+```@shell```. The former denotes commands to be executed on the host, not the
+container (more of that later on). The latter denotes commands that are valid
+for either.
+
+Usually copying and pasting whole lines is easier than selecting a portion of
+a line (especially with multiple lines), so you can use shell magic to eat the
+instructional prompts as follows:
+
+<pre>
+# for future
+echo alias host@= >> ~/.bashrc
+echo alias shell@= >> ~/.bashrc
+# for now
+alias host@=
+alias shell@=
+</pre>
+
 ## Update your computer and install prerequisites
 
 ### Ubuntu
 <pre>
-host% <b>sudo apt-get -y update</b>
-host% <b>sudo apt-get -y upgrade</b>
-host% <b>sudo apt -y install git repo</b>
+host@ <b>sudo apt-get -y update</b>
+host@ <b>sudo apt-get -y upgrade</b>
+host@ <b>sudo apt -y install git repo</b>
 </pre>
 
 ### Fedora
 <pre>
-host% <b>sudo dnf update</b>
-host% <b>sudo dnf install -y git</b>
-host% <b>mkdir -p ~/.local/bin</b>
-host% <b>curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.local/bin/repo</b>
-host% <b>chmod u+x ~/.local/bin/repo</b>
+host@ <b>sudo dnf update</b>
+host@ <b>sudo dnf install -y git</b>
+host@ <b>mkdir -p ~/.local/bin</b>
+host@ <b>curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.local/bin/repo</b>
+host@ <b>chmod u+x ~/.local/bin/repo</b>
 </pre>
 
 ## Configure git
@@ -27,9 +45,9 @@ host% <b>chmod u+x ~/.local/bin/repo</b>
 Only linear git history allowed, no merge commits.
 
 <pre>
-host% <b>git config --global user.email "you@example.com"</b>
-host% <b>git config --global user.name "Your Name"</b>
-host% <b>git config --global merge.ff only</b>
+host@ <b>git config --global user.email "you@example.com"</b>
+host@ <b>git config --global user.name "Your Name"</b>
+host@ <b>git config --global merge.ff only</b>
 </pre>
 
 ## Set up github access
@@ -43,22 +61,22 @@ or git cloning process will be quite cumbersome. In your github account, go to â
 
 ### Ubuntu
 <pre>
-host% <b>sudo apt -y install docker docker.io</b>
+host@ <b>sudo apt -y install docker docker.io</b>
 </pre>
 
 ### Fedora
 <pre>
-host% <b>sudo dnf install -y dnf-plugins-core</b>
-host% <b>sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo</b>
-host% <b>sudo dnf install -y docker-ce docker-ce-cli containerd.io</b>
-host% <b>sudo systemctl enable docker</b>
-host% <b>sudo systemctl start docker</b>
+host@ <b>sudo dnf install -y dnf-plugins-core</b>
+host@ <b>sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo</b>
+host@ <b>sudo dnf install -y docker-ce docker-ce-cli containerd.io</b>
+host@ <b>sudo systemctl enable docker</b>
+host@ <b>sudo systemctl start docker</b>
 </pre>
 
 Add yourself to ```docker``` group:
 
 <pre>
-host% <b>sudo usermod -aG docker $USER</b>
+host@ <b>sudo usermod -aG docker $USER</b>
 </pre>
 
 In order to supplementary group change take effect, either reboot your computer or log out and back in (the most lazy ones can
@@ -68,51 +86,79 @@ use the ```newgrp``` command). In any case verify with the ```groups``` command.
 <pre>
 # Choose a working directory, this will be visible in the container at /workspace
 # (the WORKSPACE variable will point to /workspace as well inside the container)
-host% <b>export WORKSPACE=~/sel4</b>
+host@ <b>export WORKSPACE=~/sel4</b>
 
-host% <b>mkdir ${WORKSPACE} && cd ${WORKSPACE}</b>
-host% <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git -b tii/development</b>
-host% <b>repo sync</b>
+host@ <b>mkdir ${WORKSPACE} && cd ${WORKSPACE}</b>
+host@ <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git -b tii/development</b>
+host@ <b>repo sync</b>
 </pre>
 
 ## Build docker images
 <pre>
-host% <b>make docker</b>
+host@ <b>make docker</b>
 </pre>
 
+## Two ways to use container
+
+You can use the containerized build system using an interactive running inside
+the container:
+
+<pre>
+# Enter build container interactively -- you get all tools
+# (for example, aarch64-linux-gnu toolchain) without having
+# to install them onto host.
+host@ <b>make shell</b>
+
+container@ <b>aarch64-linux-gnu-objdump -D rpi4_sel4test/kernel/kernel.elf</b>
+</pre>
+
+Note the new prompt ```container@```. It is for commands that are guaranteed to
+be valid only inside the container. Outside the container the command might be
+even dangerous.
+
+The container sets up shell aliases ```container@=''``` and ```shell@=''```.
+As described earlier, the latter is valid for both the container and the host,
+such as:
+
+<pre>
+shell@ <b>make rpi4_defconfig</b>
+</pre>
+
+The other way to use the container is to just ignore whether you are in the
+container's interactive shell or in the host shell, just like in the example
+above. When a command requiring container's tooling is entered and you are
+working from the host shell, the build system transparently executes the
+command inside the container.
+
+As a general rule, all ```make``` commands are ```shell@``` ones. Some other
+details are needed, such as valid ```WORKSPACE``` environment variable. The
+container does that for you, but for the host it is imperative you set it
+yourself.
 ## Use it!
 
 <pre>
-host% <b>cd ${WORKSPACE}</b>
+shell@ <b>cd ${WORKSPACE}</b>
 
 # configure for Raspberry Pi 4
 
-host% <b>make rpi4_defconfig</b>
+shell@ <b>make rpi4_defconfig</b>
 
 # simple seL4 microkernel test
 
-host% <b>make sel4test</b>
-host% <b>ls -l rpi4_sel4test/images</b>
+shell@ <b>make sel4test</b>
+shell@ <b>ls -l rpi4_sel4test/images</b>
 -rwxr-xr-x. 1 build build 5832040 Aug 31 08:31 sel4test-driver-image-arm-bcm2711
 
 # More complex examples with VMs (you need to build the Yocto
 # images first, see below)
 
-host% <b>make vm_minimal</b>
-host% <b>ls -l rpi4_vm_minimal/images</b>
+shell@ <b>make vm_minimal</b>
+shell@ <b>ls -l rpi4_vm_minimal/images</b>
 -rwxr-xr-x. 1 build build 37641488 Aug 28 02:50 capdl-loader-image-arm-bcm2711
 
-host% <b>make vm_multi</b>
-host% <b>ls -l rpi4_vm_multi/images</b>
+shell@ <b>make vm_multi</b>
+shell@ <b>ls -l rpi4_vm_multi/images</b>
 -rwxr-xr-x. 1 build build 51656592 Aug 28 02:52 capdl-loader-image-arm-bcm2711
-
-# Enter build container interactively -- you get all tools
-# (for example, aarch64-linux-gnu toolchain) without having
-# to install them onto host.
-
-host% <b>make shell</b>
-
-container% <b>aarch64-linux-gnu-objdump -D rpi4_sel4test/kernel/kernel.elf</b>
 </pre>
 
 ## Network booting
@@ -124,21 +170,21 @@ This seL4 playground boots from network.
 Create a directory on the NFS server:
 
 <pre>
-host% <b>sudo mkdir -p /srv/nfs/rpi4</b>
+host@ <b>sudo mkdir -p /srv/nfs/rpi4</b>
 </pre>
 
 Add this directory to NFS exports:
 
 <pre>
-host% <b>cat /etc/exports</b>
+host@ <b>cat /etc/exports</b>
 /srv/nfs/rpi4 192.168.5.0/24(rw,no_root_squash)
-host% <b>sudo exportfs -a</b>
+host@ <b>sudo exportfs -a</b>
 </pre>
 
 ### Pass NFS server info via DHCP
 
 <pre>
-host% <b>cat /etc/dhcp/dhcpd.conf</b>
+host@ <b>cat /etc/dhcp/dhcpd.conf</b>
 option domain-name     "local.domain";
 default-lease-time 600;
 max-lease-time 7200;
@@ -171,30 +217,30 @@ virtio-blk, virtio-console, virtio-net and virtfs to the user-VM guest. This dem
 Buildroot and uses Yocto to build the guest VM images.
 
 <pre>
-host$ <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git -b tii/development</b>
-host$ <b>repo sync</b>
-host$ <b>make docker</b>
+host@ <b>repo init -u git@github.com:tiiuae/tii_sel4_manifest.git -b tii/development</b>
+host@ <b>repo sync</b>
+host@ <b>make docker</b>
 
 # configure for Raspberry Pi 4
-host$ <b>make rpi4_defconfig</b>
+shell@ <b>make rpi4_defconfig</b>
 
 # build VM root filesystems, Linux kernel and initramfs
-host$ <b>make linux-image</b>
+shell@ <b>make linux-image</b>
 
 # build qemu seL4 vm_qemu_virtio
-host$ <b>make vm_qemu_virtio</b>
+shell@ <b>make vm_qemu_virtio</b>
 
 # copy seL4 image to TFTP directory
-host$ <b>cp rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711 /var/lib/tftpboot/image.rpi4</b>
+host@ <b>cp rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711 /var/lib/tftpboot/image.rpi4</b>
 
 # select bootefi command
-host$ <b>cp projects/camkes-vm-images/rpi4/bootscripts/tftpboot-bootefi.scr /var/lib/tftpboot/boot.scr.rpi4</b>
+host@ <b>cp projects/camkes-vm-images/rpi4/bootscripts/tftpboot-bootefi.scr /var/lib/tftpboot/boot.scr.rpi4</b>
 
 # expose driver-VM image via NFS (update your directory to command)
-host$ <b>tar -C /srv/nfs/rpi4 -xjpvf /workspace/projects/camkes-vm-images/rpi4/vm-image-driver.tar.bz2</b>
+host@ <b>tar -C /srv/nfs/rpi4 -xjpvf /workspace/projects/camkes-vm-images/rpi4/vm-image-driver.tar.bz2</b>
 
 # create host/guest shared directory
-host$ <b>mkdir /srv/nfs/rpi4/host</b>
+host@ <b>mkdir /srv/nfs/rpi4/host</b>
 </pre>
 
 # Using QEMU demo
@@ -202,7 +248,7 @@ host$ <b>mkdir /srv/nfs/rpi4/host</b>
 After the driver-VM has booted, log in (empty root password) and start the user-VM:
 
 <pre>
-driver-vm$ <b>screen -c screenrc-drivervm</b>
+driver-vm@ <b>screen -c screenrc-drivervm</b>
 </pre>
 
 This will start a ```screen``` session, with one shell for interactive use and the another one is QEMU's stdout, works also
@@ -213,7 +259,7 @@ When the user-VM has booted, log in. There is ```screenrc-uservm```, which start
 virtio-net and virtio-console. To launch it, just type:
 
 <pre>
-user-vm$ <b>screen -c screenrc-uservm</b>
+user-vm@ <b>screen -c screenrc-uservm</b>
 </pre>
 
 Within user-VM, the ```screen``` control character has been mapped to ^B.
@@ -228,7 +274,7 @@ least 100 GB disk space for the build.  After the build finishes, you will find
 everything ```/workspace/projects/camkes-vm-images/rpi4```.
 
 <pre>
-host% <b>make linux-image</b>
+shell@ <b>make linux-image</b>
 
  ...
 
@@ -249,11 +295,11 @@ To customize the guest Linux kernel, use facilities Yocto provides:
 
 <pre>
 # Use this to modify just the configs
-container% <b>bitbake -c do_menuconfig linux-raspberrypi</b>
-container% <b>bitbake linux-raspberrypi</b>
+container@ <b>bitbake -c do_menuconfig linux-raspberrypi</b>
+container@ <b>bitbake linux-raspberrypi</b>
 
 # With devtool you can edit the sources after Yocto has patched them
-container% <b>devtool modify kernel-module-sel4-virtio</b>
+container@ <b>devtool modify kernel-module-sel4-virtio</b>
 INFO: Source tree extracted to /workspace/vm-images/build/workspace/sources/kernel-module-sel4-virtio
 INFO: Using source tree as build directory since that would be the default for this recipe
 INFO: Recipe kernel-module-sel4-virtio now set up to build from /workspace/vm-images/build/workspace/sources/kernel-module-sel4-virtio
@@ -264,14 +310,14 @@ use your favorite editor to play with them.
 
 <pre>
 # To rebuild the rootfs with changes made to kernel module:
-container% <b>bitbake vm-image-driver</b>
+container@ <b>bitbake vm-image-driver</b>
 
 # Commit your changes to temporary git repo devtool made for you
-host% <b>cd ${WORKSPACE}/vm-images/build/workspace/sources/kernel-module-sel4-virtio</b>
-host% <b>git commit -a --signoff</b>
+shell@ <b>cd ${WORKSPACE}/vm-images/build/workspace/sources/kernel-module-sel4-virtio</b>
+shell@ <b>git commit -a --signoff</b>
 
 # Use devtool to embed the change commits into meta-sel4 layer as patches:
-container% <b>devtool update-recipe kernel-module-sel4-virtio</b>
+container@ <b>devtool update-recipe kernel-module-sel4-virtio</b>
 INFO: Adding new patch 0001-Say-hello.patch
 INFO: Updating recipe kernel-module-sel4-virtio_git.bb
 </pre>
@@ -280,7 +326,7 @@ You will find patch you made in ```${WORKSPACE}/vm-images/meta-sel4/recipes-kern
 and the patch added to ```SRC_URI``` field in the recipe. To get rid of the working copy:
 
 <pre>
-container% <b>devtool reset kernel-module-sel4-virtio</b>
+container@ <b>devtool reset kernel-module-sel4-virtio</b>
 </pre>
 
 # Building Yocto SDK package
@@ -292,12 +338,12 @@ separate from the Yocto build system. We mainly use it to provide GDB debugger,
 because the Ubuntus' multiarch GDB seems to have some oddities.
 
 <pre>
-host% <b>make shell</b>
-container% <b>cd vm-images</b>
+host@ <b>make shell</b>
+container@ <b>cd vm-images</b>
 # This command will set up your environment for Yocto builds, so remember
 # to execute it every time you enter the container.
-container% <b>source setup.sh</b>
-container% <b>bitbake vm-image-driver -c populate-sdk</b>
+container@ <b>source setup.sh</b>
+container@ <b>bitbake vm-image-driver -c populate-sdk</b>
 </pre>
 
 Yocto will download and build toolchains.
@@ -307,7 +353,7 @@ After the build finishes, you will find the SDK at
 # Installing the SDK after build:
 
 <pre>
-container% <b>./tmp/deploy/sdk/poky-glibc-x86_64-vm-image-driver-cortexa72-raspberrypi4-64-toolchain-3.4.sh</b>
+container@ <b>./tmp/deploy/sdk/poky-glibc-x86_64-vm-image-driver-cortexa72-raspberrypi4-64-toolchain-3.4.sh</b>
 Poky (Yocto Project Reference Distro) SDK installer version 3.4
 ===============================================================
 Enter target directory for SDK (default: /opt/poky/3.4): 
@@ -318,7 +364,7 @@ Setting it up...done
 SDK has been successfully set up and is ready to be used.
 Each time you wish to use the SDK in a new shell session, you need to source the environment setup script e.g.
  $ . /opt/poky/3.4/environment-setup-cortexa72-poky-linux
-container% <b>ll /opt/poky/3.4/</b>
+container@ <b>ll /opt/poky/3.4/</b>
 total 24
 drwxr-xr-x. 3 root root   144 Dec 10 11:50 ./
 drwxr-xr-x. 3 root root    17 Dec 10 11:49 ../
