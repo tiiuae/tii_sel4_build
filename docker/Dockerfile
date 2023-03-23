@@ -37,7 +37,6 @@ RUN \
         python3-pip \
         python3-pyelftools \
         python3-future \
-        python3-jinja2 \
         python3-jsonschema \
         python3-libarchive-c \
         python3-ply \
@@ -87,6 +86,7 @@ USER build
 
 RUN pip3 install \
     aenum \
+    jinja2 \
     ordered_set \
     plyplus \
     pyfdt \
