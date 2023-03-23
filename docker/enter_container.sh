@@ -21,6 +21,7 @@ fi
 exec docker run --rm ${INTERACTIVE} \
   `echo ${DOCKER_EXPORT} | xargs -Ivar -- echo --env var` \
   -v ${DIR}:/workspace:z \
+  ${YOCTO_DL_DIR:+-v "${YOCTO_DL_DIR}":/workspace/downloads:z} \
   -v ${HOME}/.ssh:/home/build/.ssh:z \
   -v ${HOME}/.gitconfig:/home/build/.gitconfig:z \
   --add-host host.docker.internal:host-gateway \

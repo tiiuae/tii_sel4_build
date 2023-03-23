@@ -11,6 +11,12 @@ export MACHINE=${MACHINE:-vm-raspberrypi4-64}
 
 . "${LAYERS_ROOT}/poky/oe-init-build-env" "$@"
 
+if test -d /workspace/downloads; then
+  sed -E -i -e 's@^#DL_DIR \?= "\$\{TOPDIR\}/downloads"$@DL_DIR ?= "/workspace/downloads"@g' conf/local.conf
+else
+  sed -E -i -e 's@^DL_DIR \?= "/workspace/downloads"$@#DL_DIR ?= "${TOPDIR}/downloads"@g' conf/local.conf
+fi
+
 grep meta-sel4 conf/bblayers.conf 2>/dev/null 1>&2 || \
   printf 'BBLAYERS += "%s/meta-sel4"\n' "$LAYERS_ROOT" >> conf/bblayers.conf
 

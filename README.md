@@ -64,6 +64,13 @@ host% <b>sudo usermod -aG docker $USER</b>
 In order to supplementary group change take effect, either reboot your computer or log out and back in (the most lazy ones can
 use the ```newgrp``` command). In any case verify with the ```groups``` command.
 
+## Configure Yocto download directory
+<pre>
+host% <b>export YOCTO_DL_DIR=~/yocto-downloads</b>
+host% <b>echo 'export YOCTO_DL_DIR='${YOCTO_DL_DIR} >> ~/.bashrc</b>
+host% <b>mkdir ${YOCTO_DL_DIR}</b>
+</pre>
+
 ## Check out sources
 <pre>
 # Choose a working directory, this will be visible in the container at /workspace
