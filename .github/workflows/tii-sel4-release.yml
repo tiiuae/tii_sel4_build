@@ -1,3 +1,6 @@
+---
+# Copyright 2023, Technology Innovation Institute
+
 name: tii-seL4-release
 
 on:
@@ -48,7 +51,7 @@ jobs:
             MANIFEST: ${{ inputs.manifest-file }}
             SSH_KEY: ${{ secrets.SSH_KEY }}
             SSH_KEYSCAN_URL: 'github.com'
-  
+
         - name: Build Docker image
           working-directory: ./workspace
           run: |
@@ -131,7 +134,7 @@ jobs:
         - name: Copy release documentaion
           run: |
             cp ${{inputs.release-doc}} workspace/"${{env.TII_SEL4_RELEASE}}/"
-        - name: Create release package 
+        - name: Create release package
           working-directory: ./workspace
           run: |
             fakeroot tar -cjf "${{env.TII_SEL4_RELEASE}}.tar.bz2" "${{env.TII_SEL4_RELEASE}}"
