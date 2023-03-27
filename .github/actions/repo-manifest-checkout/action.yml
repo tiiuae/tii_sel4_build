@@ -19,6 +19,21 @@ inputs:
     required: true
     default: 'default.xml'
 
+  MANIFEST_XML:
+    description: 'XML data containing the manifest'
+    required: false
+    default: ''
+
+  BRANCH_OVERRIDE:
+    description: 'Branches to override within manifest projects'
+    required: false
+    default: ''
+
+  REPO_OVERRIDE:
+    description: 'Repositories to override within the manifest'
+    required: false
+    default: ''
+
   SSH_KEY:
     description: 'Optional ssh key for cloning'
     required: false

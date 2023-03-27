@@ -5,7 +5,10 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get -y install \
     repo \
-    git
+    git \
+    xmlstarlet
 
 COPY ./checkout.sh /
+COPY ./branch_override.sh /
+COPY ./repo_override.sh /
 ENTRYPOINT ["/checkout.sh"]
