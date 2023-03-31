@@ -19,7 +19,7 @@ if test -t 0; then
 fi
 
 exec docker run --rm ${INTERACTIVE} \
-  `echo ${DOCKER_EXPORT} | xargs -Ivar -- echo --env var` \
+  `echo ${DOCKER_EXPORT} | xargs -d ' ' -Ivar -- echo --env var` \
   -v ${DIR}:/workspace:z \
   ${YOCTO_SOURCE_MIRROR_DIR:+--env YOCTO_SOURCE_MIRROR_DIR=/workspace/downloads} \
   ${YOCTO_SOURCE_MIRROR_DIR:+-v "${YOCTO_SOURCE_MIRROR_DIR}":/workspace/downloads:z} \
