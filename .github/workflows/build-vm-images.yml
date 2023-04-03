@@ -59,6 +59,8 @@ jobs:
     steps:
       - name: Checkout for using local actions
         uses: actions/checkout@v3.3.0
+        with:
+          ref: ${{ github.ref }}
 
       - name: Generate manifest
         id: manifest
@@ -94,6 +96,8 @@ jobs:
     steps:
       - name: Checkout code for using local actions
         uses: actions/checkout@v3.3.0
+        with:
+          ref: ${{ github.ref }}
 
       - name: Checkout code
         uses: ./.github/actions/repo-manifest-checkout
@@ -141,6 +145,8 @@ jobs:
     steps:
       - name: Checkout code for using local actions
         uses: actions/checkout@v3.3.0
+        with:
+          ref: ${{ github.ref }}
 
       - name: Checkout code
         uses: ./.github/actions/repo-manifest-checkout
