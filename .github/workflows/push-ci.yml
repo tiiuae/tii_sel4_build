@@ -1,16 +1,19 @@
 ---
-# Copyright 2022, Technology Innovation Institute
+# Copyright 2023, Technology Innovation Institute
 
-name: Check default branch
+name: CI development branch verification
+
 on:
   push:
     branches:
-      - 'tii/development'
+      - 'wip/ci/**'
   workflow_dispatch:
 
 jobs:
   build-vm-images:
     uses: ./.github/workflows/build-vm-images.yml
+    with:
+      branch-override: ${{ github.ref_name }}
     secrets:
       ssh-key: ${{ secrets.CI_SSH_KEY }}
       rt-user: ${{ secrets.RT_USER }}
