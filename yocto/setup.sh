@@ -9,6 +9,12 @@ LAYERS_ROOT="$(realpath -e "$(dirname "$SCRIPT")")"
 # default to VM target
 export MACHINE=${MACHINE:-vm-raspberrypi4-64}
 
+if [ -n "$YOCTO_SOURCE_MIRROR_DIR" ]; then
+  export INHERIT="own-mirrors"
+  export SOURCE_MIRROR_URL=file://${YOCTO_SOURCE_MIRROR_DIR%/}/
+  export BB_ENV_PASSTHROUGH_ADDITIONS="$BB_ENV_PASSTHROUGH_ADDITIONS SOURCE_MIRROR_URL INHERIT"
+fi
+
 . "${LAYERS_ROOT}/poky/oe-init-build-env" "$@"
 
 grep meta-sel4 conf/bblayers.conf 2>/dev/null 1>&2 || \
