@@ -1,0 +1,29 @@
+---
+# Copyright 2023, Technology Innovation Institute
+
+name: Update Yocto source mirror packages
+description: |
+  Downloads Yocto source packages to given directory
+
+inputs:
+  mirror-dir:
+    description: "Directory to save source packages"
+    required: false
+  machine:
+    description: "Yocto target machine"
+    required: false
+  recipes:
+    description: "A space separated list of recipes to fetch"
+    required: false
+    default: "core-image-minimal"
+  workspace:
+    description: "Workspace directory"
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - run: echo "${{ github.action_path }}" >> $GITHUB_PATH
+      shell: bash
+    - run: action.sh
+      shell: bash
