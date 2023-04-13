@@ -1,0 +1,50 @@
+---
+# Copyright 2023, Technology Innovation Institute
+
+name: Yocto build
+description: |
+  Build recipes with Yocto
+
+inputs:
+  machine:
+    description: "Yocto target machine"
+    required: false
+  recipes:
+    description: "A space separated list of recipes to build"
+    required: false
+    default: "core-image-minimal"
+  setup-path:
+    description: "Path to setup script"
+    required: false
+    default: "setup.sh"
+  workspace:
+    description: "Workspace directory"
+    required: false
+  install-deps:
+    description: "Install dependencies"
+    required: false
+    default: 'false'
+  install-use-sudo:
+    description: "Use sudo when installing dependencies"
+    required: false
+    default: 'false'
+
+runs:
+  using: "composite"
+  steps:
+    - run: echo "${{ github.action_path }}" >> $GITHUB_PATH
+      shell: bash
+
+    - run: install-deps.sh
+      env:
+        INPUT_USE_SUDO: ${{ inputs.install-use-sudo }}
+      shell: bash
+      if: ${{ inputs.install-deps == 'true' }}
+
+    - run: build.sh
+      env:
+        INPUT_MACHINE: ${{ inputs.machine }}
+        INPUT_RECIPES: ${{ inputs.recipes }}
+        INPUT_SETUP_PATH: ${{ inputs.setup-path }}
+        INPUT_WORKSPACE: ${{ inputs.workspace }}
+      shell: bash
