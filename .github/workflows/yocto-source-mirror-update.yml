@@ -1,0 +1,69 @@
+name: Source mirror directory update
+on:
+  workflow_dispatch:
+    inputs:
+      manifest-url:
+        description: 'Manifest repository'
+        default: 'git@github.com:tiiuae/tii_sel4_manifest.git'
+        required: false
+        type: string
+      manifest-revision:
+        description: 'Manifest revision'
+        default: 'tii/development'
+        required: false
+        type: string
+      manifest-file:
+        description: 'Manifest file'
+        default: 'default.xml'
+        required: false
+        type: string
+      machine:
+        description: 'Yocto target machine config'
+        required: false
+        type: string
+      mirror-dir:
+        description: 'Yocto source mirror directory'
+        required: false
+        type: string
+      recipes:
+        description: 'Yocto source mirror directory'
+        required: false
+        default: "vm-image-driver vm-image-driver-gui vm-image-user vm-image-user-gui vm-image-boot"
+        type: string
+    secrets:
+      ssh-key:
+        description: 'ssh key for checking out source code'
+        required: true
+  schedule:
+    - cron: 0 0 * * 0
+
+jobs:
+  update-source-mirror:
+    runs-on: [self-hosted, yocto-build-test]
+    if: ${{ github.repository_owner == 'tiiuae' }}
+    steps:
+      - name: Checkout for using local actions
+        uses: actions/checkout@v3.3.0
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Checkout code
+        uses: ./.github/actions/repo-manifest-checkout
+        with:
+          manifest-url: ${{ inputs.manifest-url }}
+          manifest-revision: ${{ inputs.manifest-revision }}
+          manifest: ${{ inputs.manifest-file }}
+          repo-override: ${{ inputs.repo-override }}
+          branch-override: ${{ inputs.branch-override }}
+          ssh-key: ${{ secrets.ssh-key }}
+          ssh-keyscan-url: 'github.com'
+          workspace: './workspace'
+
+      - name: Update source mirror directory
+        uses: ./.github/actions/source-mirror-update
+        with:
+          machine: ${{ inputs.machine }}
+          mirror-dir: ${{ inputs.mirror-dir }}
+          recipes: ${{ inputs.recipes }}
+          workspace: './workspace/vm-images'
+
