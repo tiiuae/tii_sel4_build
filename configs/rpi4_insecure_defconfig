@@ -2,6 +2,4 @@ AARCH64=1
 PLATFORM=rpi4
 NUM_NODES=4
 CROSS_COMPILER_PREFIX=aarch64-linux-gnu-
-VmSWIOTLB=ON
-KernelArmExportPMUUser=ON
-KernelBenchmarks=track_kernel_entries
+VmSWIOTLB=OFF
