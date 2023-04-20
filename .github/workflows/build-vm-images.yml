@@ -51,29 +51,104 @@ on:
         required: true
 
 jobs:
-  build_images:
+  code:
+    name: Create manifest for the jobs
     runs-on: ubuntu-latest
+    outputs:
+      manifest: ${{ steps.manifest.outputs.manifest-xml }}
+    steps:
+      - name: Checkout for using local actions
+        uses: actions/checkout@v3.3.0
+
+      - name: Generate manifest
+        id: manifest
+        uses: ./.github/actions/repo-manifest-checkout
+        with:
+          MANIFEST_URL: ${{ inputs.manifest-url }}
+          MANIFEST_REVISION: ${{ inputs.manifest-revision }}
+          MANIFEST: ${{ inputs.manifest-file }}
+          REPO_OVERRIDE: ${{ inputs.repo-override }}
+          BRANCH_OVERRIDE: ${{ inputs.branch-override }}
+          SSH_KEY: ${{ secrets.ssh-key }}
+          SSH_KEYSCAN_URL: 'github.com'
+          WORKSPACE: './workspace'
+
+      - name: Dump build info
+        run: |
+          manifest='${{ steps.manifest.outputs.manifest-xml }}'
+          echo "Using manifest:"
+          printf '%b' "$(echo "${manifest//'%25'/'%'}" | \
+                    { read -rd '' manifest; echo "${manifest//$'%0A'/'\n'}"; } |
+                    { read -rd '' manifest; echo "${manifest//$'%0D'/'\r'}"; })"
+
+  build-qemu-virtio:
+    runs-on: [self-hosted, yocto-build]
+    needs: [code]
+    if: ${{ github.repository_owner == 'tiiuae' }}
     steps:
       - name: Checkout code for using local actions
         uses: actions/checkout@v3.3.0
 
       - name: Checkout code
-        id: checkout
         uses: ./.github/actions/repo-manifest-checkout
         with:
+          # Use previously generated manifest
+          MANIFEST_XML: ${{ needs.code.outputs.manifest }}
           MANIFEST_URL: ${{ inputs.manifest-url }}
           MANIFEST_REVISION: ${{ inputs.manifest-revision }}
           MANIFEST: ${{ inputs.manifest-file }}
           SSH_KEY: ${{ secrets.ssh-key }}
           SSH_KEYSCAN_URL: 'github.com'
           WORKSPACE: './workspace'
-          REPO_OVERRIDE: ${{ inputs.repo-override }}
-          BRANCH_OVERRIDE: ${{ inputs.branch-override }}
 
-      - name: Dump build info
+      - name: Build Docker image
+        working-directory: ./workspace
         run: |
-          echo "Using manifest:"
-          echo -e '${{ steps.checkout.outputs.manifest-xml }}'
+          make docker
+
+      - name: Build Yocto image
+        working-directory: ./workspace
+        run: |
+          make linux-image
+
+      - name: Build vm_qemu_virtio
+        uses: ./.github/actions/vm-image
+        with:
+          CONFIG: ${{ inputs.platform }}
+          TARGET: 'vm_qemu_virtio'
+          WORKSPACE: './workspace'
+
+      - name: Publish images to artifactory
+        uses: ./.github/actions/artifact-publish
+        with:
+          rt-user: ${{ secrets.rt-user }}
+          rt-api-key: ${{ secrets.rt-api-key }}
+          rt-url: ${{ secrets.rt-url }}
+          build-num: ${{ github.run_number }}
+          input-paths:  |
+            workspace/rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711:tii-sel4-artifacts/rpi4_vm_qemu_virtio/
+            workspace/vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/vm-image-driver-vm-raspberrypi4-64.tar.bz2:tii-sel4-artifacts/rpi4_vm_qemu_virtio/
+            workspace/vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/vm-image-driver-vm-raspberrypi4-64.ext3:tii-sel4-artifacts/rpi4_vm_qemu_virtio/
+
+  build-reference-images:
+    runs-on: ubuntu-latest
+    needs: [code]
+
+    steps:
+      - name: Checkout code for using local actions
+        uses: actions/checkout@v3.3.0
+
+      - name: Checkout code
+        uses: ./.github/actions/repo-manifest-checkout
+        with:
+          # Use previously generated manifest
+          MANIFEST_XML: ${{ needs.code.outputs.manifest }}
+          MANIFEST_URL: ${{ inputs.manifest-url }}
+          MANIFEST_REVISION: ${{ inputs.manifest-revision }}
+          MANIFEST: ${{ inputs.manifest-file }}
+          SSH_KEY: ${{ secrets.ssh-key }}
+          SSH_KEYSCAN_URL: 'github.com'
+          WORKSPACE: './workspace'
 
       - name: Build vm_minimal
         uses: ./.github/actions/vm-image
@@ -96,14 +171,8 @@ jobs:
           TARGET: 'sel4test'
           WORKSPACE: './workspace'
 
-      - name: Build vm_qemu_virtio
-        uses: ./.github/actions/vm-image
-        with:
-          CONFIG: ${{ inputs.platform }}
-          TARGET: 'vm_qemu_virtio'
-          WORKSPACE: './workspace'
-
       - name: Publish images to artifactory
+        if: ${{ github.repository_owner == 'tiiuae' }}
         uses: ./.github/actions/artifact-publish
         with:
           rt-user: ${{ secrets.rt-user }}
@@ -114,4 +183,3 @@ jobs:
             workspace/rpi4_vm_minimal/images/capdl-loader-image-arm-bcm2711:tii-sel4-artifacts/rpi4_vm_minimal/
             workspace/rpi4_vm_multi/images/capdl-loader-image-arm-bcm2711:tii-sel4-artifacts/rpi4_vm_multi/
             workspace/rpi4_sel4test/images/sel4test-driver-image-arm-bcm2711:tii-sel4-artifacts/rpi4_vm_sel4test/
-            workspace/rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711:tii-sel4-artifacts/rpi4_vm_qemu_virtio/

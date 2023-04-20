@@ -1,0 +1,41 @@
+---
+# Copyright 2023, Technology Innovation Institute
+
+name: PR build
+on:
+  workflow_call:
+    inputs:
+      REPO_OVERRIDE:
+        description: >
+          List of pipe '|' separated repository URLs to override. The last
+          element of URL must match the name attribute of the project.
+        required: true
+        type: string
+      BRANCH_OVERRIDE:
+        description: >
+          Revision to checkout from manifest repositories if found (branch,
+          SHA or tag)
+        required: false
+        type: string
+    secrets:
+      CI_SSH_KEY:
+        required: true
+      RT_USER:
+        required: true
+      RT_APIKEY:
+        required: true
+      RT_URL:
+        required: true
+
+jobs:
+  build-vm-images:
+    uses: ./.github/workflows/build-vm-images.yml
+    with:
+      repo-override: ${{ inputs.REPO_OVERRIDE }}
+      branch-override: ${{ inputs.BRANCH_OVERRIDE }}
+    secrets:
+      ssh-key: ${{ secrets.CI_SSH_KEY }}
+      rt-user: ${{ secrets.RT_USER }}
+      rt-api-key: ${{ secrets.RT_APIKEY }}
+      rt-url: ${{ secrets.RT_URL }}
+
