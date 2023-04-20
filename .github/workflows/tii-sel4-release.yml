@@ -46,11 +46,11 @@ jobs:
         - name: check out code
           uses: ./.github/actions/repo-manifest-checkout
           with:
-            MANIFEST_URL: ${{ inputs.manifest-url }}
-            MANIFEST_REVISION: ${{ inputs.manifest-revision }}
-            MANIFEST: ${{ inputs.manifest-file }}
-            SSH_KEY: ${{ secrets.SSH_KEY }}
-            SSH_KEYSCAN_URL: 'github.com'
+            manifest-url: ${{ inputs.manifest-url }}
+            manifest-revision: ${{ inputs.manifest-revision }}
+            manifest: ${{ inputs.manifest-file }}
+            ssh-key: ${{ secrets.SSH_KEY }}
+            ssh-keyscan-url: 'github.com'
 
         - name: Build Docker image
           working-directory: ./workspace
@@ -67,25 +67,25 @@ jobs:
             cp vm-images/build/tmp/deploy/images/vm-raspberrypi4-64/Image \
             projects/camkes-vm-images/rpi4
         - name: Build vm_minimal
-          uses: ./.github/actions/vm-image
+          uses: ./.github/actions/sel4-build
           with:
-            CONFIG: ${{ inputs.platform }}
-            TARGET: 'vm_minimal'
+            config: ${{ inputs.platform }}
+            target: 'vm_minimal'
         - name: Build vm_multi
-          uses: ./.github/actions/vm-image
+          uses: ./.github/actions/sel4-build
           with:
-            CONFIG: ${{ inputs.platform }}
-            TARGET: 'vm_multi'
+            config: ${{ inputs.platform }}
+            target: 'vm_multi'
         - name: Build sel4test
-          uses: ./.github/actions/vm-image
+          uses: ./.github/actions/sel4-build
           with:
-            CONFIG: ${{ inputs.platform }}
-            TARGET: 'sel4test'
+            config: ${{ inputs.platform }}
+            target: 'sel4test'
         - name: Build vm_qemu_virtio
-          uses: ./.github/actions/vm-image
+          uses: ./.github/actions/sel4-build
           with:
-            CONFIG: ${{ inputs.platform }}
-            TARGET: 'vm_qemu_virtio' 
+            config: ${{ inputs.platform }}
+            target: 'vm_qemu_virtio'
         -  name: Collect artifacts
            working-directory: ./workspace
            run: |

@@ -1,0 +1,48 @@
+---
+# Copyright 2022, Technology Innovation Institute
+
+name: Build camkes VM image
+description: Build sel4 camkes VM image
+inputs:
+  config:
+    description: 'Make config'
+    required: true
+    default: 'rpi4_defconfig'
+
+  target:
+    description: 'VM make target'
+    required: true
+    default: 'vm_minimal'
+
+  workspace:
+    description: 'Source directory'
+    required: false
+
+  install-deps:
+    description: 'Install build dependencies'
+    required: false
+    default: 'false'
+
+  install-use-sudo:
+    description: 'Use sudo in dependency installation'
+    required: false
+    default: 'false'
+
+runs:
+  using: "composite"
+  steps:
+    - run: echo "${{ github.action_path }}" >> $GITHUB_PATH
+      shell: bash
+
+    - run: install-deps.sh
+      env:
+        INPUT_USE_SUDO: ${{ inputs.install-use-sudo }}
+      shell: bash
+      if: ${{ inputs.install-deps == 'true' }}
+
+    - run: build.sh
+      env:
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_TARGET: ${{ inputs.target }}
+        INPUT_WORKSPACE: ${{ inputs.workspace }}
+      shell: bash

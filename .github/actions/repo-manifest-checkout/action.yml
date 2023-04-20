@@ -6,62 +6,98 @@ description: |
   Checkout multiple repositories using repo tool with given manifest
 
 inputs:
-  MANIFEST_URL:
+  manifest-url:
     description: 'Repo manifest repository'
     required: true
 
-  MANIFEST_REVISION:
+  manifest-revision:
     description: 'Branch, tag or commit hash'
     required: true
 
-  MANIFEST:
+  manifest:
     description: 'Name of the manifest file'
     required: true
     default: 'default.xml'
 
-  MANIFEST_XML:
+  manifest-xml:
     description: 'XML data containing the manifest'
     required: false
     default: ''
 
-  BRANCH_OVERRIDE:
+  branch-override:
     description: 'Branches to override within manifest projects'
     required: false
     default: ''
 
-  REPO_OVERRIDE:
+  repo-override:
     description: 'Repositories to override within the manifest'
     required: false
     default: ''
 
-  SSH_KEY:
+  ssh-key:
     description: 'Optional ssh key for cloning'
     required: false
 
-  SSH_KNOWN_HOSTS:
+  ssh-known-hosts:
     description: 'Optional ssh host verification keys'
     required: false
 
-  SSH_KEYSCAN_URL:
+  ssh-keyscan-url:
     description: 'Optional url for collecting public host verification keys'
     required: false
 
-  REPO_INIT_OPTS:
+  repo-init-opts:
     description: 'Repo init options'
     required: false
 
-  REPO_SYNC_OPTS:
+  repo-sync-opts:
     description: 'Repo sync options'
     required: false
 
-  WORKSPACE:
+  workspace:
     description: 'Directory where to checkout'
     required: false
+
+  install-deps:
+    description: 'Install action dependencies'
+    required: false
+    default: 'false'
+
+  install-use-sudo:
+    description: 'Use sudo in dependency installation'
+    required: false
+    default: 'false'
 
 outputs:
   manifest-xml:
     description: Repo manifest xml data with revisions
+    value: ${{ steps.checkout.outputs.manifest-xml }}
 
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: 'composite'
+  steps:
+    - run: echo "${{ github.action_path }}" >> $GITHUB_PATH
+      shell: bash
+
+    - run: install-deps.sh
+      env:
+        INPUT_USE_SUDO: ${{ inputs.install-use-sudo }}
+      shell: bash
+      if: ${{ inputs.install-deps == 'true' }}
+
+    - run: checkout.sh
+      id: checkout
+      env:
+        INPUT_MANIFEST_URL: ${{ inputs.manifest-url }}
+        INPUT_MANIFEST_REVISION: ${{ inputs.manifest-revision }}
+        INPUT_MANIFEST: ${{ inputs.manifest }}
+        INPUT_MANIFEST_XML: ${{ inputs.manifest-xml }}
+        INPUT_BRANCH_OVERRIDE: ${{ inputs.branch-override }}
+        INPUT_REPO_OVERRIDE: ${{ inputs.repo-override }}
+        INPUT_SSH_KEY: ${{ inputs.ssh-key }}
+        INPUT_KNOWN_HOSTS: ${{ inputs.ssh-known-hosts }}
+        INPUT_SSH_KEYSCAN_URL: ${{ inputs.ssh-keyscan-url }}
+        INPUT_REPO_INIT_OPTS: ${{ inputs.repo-init-opts }}
+        INPUT_REPO_SYNC_OPTS: ${{ inputs.repo-sync-opts }}
+        INPUT_WORKSPACE: ${{ inputs.workspace }}
+      shell: bash
