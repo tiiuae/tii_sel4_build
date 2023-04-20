@@ -64,27 +64,33 @@ jobs:
         id: manifest
         uses: ./.github/actions/repo-manifest-checkout
         with:
-          MANIFEST_URL: ${{ inputs.manifest-url }}
-          MANIFEST_REVISION: ${{ inputs.manifest-revision }}
-          MANIFEST: ${{ inputs.manifest-file }}
-          REPO_OVERRIDE: ${{ inputs.repo-override }}
-          BRANCH_OVERRIDE: ${{ inputs.branch-override }}
-          SSH_KEY: ${{ secrets.ssh-key }}
-          SSH_KEYSCAN_URL: 'github.com'
-          WORKSPACE: './workspace'
+          manifest-url: ${{ inputs.manifest-url }}
+          manifest-revision: ${{ inputs.manifest-revision }}
+          manifest: ${{ inputs.manifest-file }}
+          repo-override: ${{ inputs.repo-override }}
+          branch-override: ${{ inputs.branch-override }}
+          ssh-key: ${{ secrets.ssh-key }}
+          ssh-keyscan-url: 'github.com'
+          workspace: './workspace'
+          install-deps: true
+          install-use-sudo: true
 
       - name: Dump build info
         run: |
-          manifest='${{ steps.manifest.outputs.manifest-xml }}'
           echo "Using manifest:"
-          printf '%b' "$(echo "${manifest//'%25'/'%'}" | \
-                    { read -rd '' manifest; echo "${manifest//$'%0A'/'\n'}"; } |
-                    { read -rd '' manifest; echo "${manifest//$'%0D'/'\r'}"; })"
+          manifest='${{ steps.manifest.outputs.manifest-xml }}'
+          manifest=${manifest//'%25'/'%'}
+          manifest=${manifest//$'%0A'/'\n'}
+          manifest=${manifest//$'%0D'/'\r'}
+          printf "%b" "$manifest"
 
   build-qemu-virtio:
     runs-on: [self-hosted, yocto-build]
     needs: [code]
     if: ${{ github.repository_owner == 'tiiuae' }}
+    env:
+      # Do not use container
+      container: "none"
     steps:
       - name: Checkout code for using local actions
         uses: actions/checkout@v3.3.0
@@ -93,26 +99,22 @@ jobs:
         uses: ./.github/actions/repo-manifest-checkout
         with:
           # Use previously generated manifest
-          MANIFEST_XML: ${{ needs.code.outputs.manifest }}
-          MANIFEST_URL: ${{ inputs.manifest-url }}
-          MANIFEST_REVISION: ${{ inputs.manifest-revision }}
-          MANIFEST: ${{ inputs.manifest-file }}
-          SSH_KEY: ${{ secrets.ssh-key }}
-          SSH_KEYSCAN_URL: 'github.com'
-          WORKSPACE: './workspace'
+          manifest-xml: ${{ needs.code.outputs.manifest }}
+          manifest-url: ${{ inputs.manifest-url }}
+          manifest-revision: ${{ inputs.manifest-revision }}
+          manifest: ${{ inputs.manifest-file }}
+          ssh-key: ${{ secrets.ssh-key }}
+          ssh-keyscan-url: 'github.com'
+          workspace: './workspace'
 
-      - name: Build Docker image
-        working-directory: ./workspace
-        run: |
-          make docker
-
-      - name: Build Yocto image
-        working-directory: ./workspace
-        run: |
-          make linux-image
+      - name: Build Yocto images
+        uses: ./.github/actions/yocto-build
+        with:
+          workspace: ./workspace/vm-images
+          recipes: "vm-image-driver vm-image-driver-gui vm-image-boot"
 
       - name: Build vm_qemu_virtio
-        uses: ./.github/actions/vm-image
+        uses: ./.github/actions/sel4-build
         with:
           CONFIG: ${{ inputs.platform }}
           TARGET: 'vm_qemu_virtio'
@@ -133,7 +135,9 @@ jobs:
   build-reference-images:
     runs-on: ubuntu-latest
     needs: [code]
-
+    env:
+      # Do not use container
+      container: "none"
     steps:
       - name: Checkout code for using local actions
         uses: actions/checkout@v3.3.0
@@ -142,34 +146,38 @@ jobs:
         uses: ./.github/actions/repo-manifest-checkout
         with:
           # Use previously generated manifest
-          MANIFEST_XML: ${{ needs.code.outputs.manifest }}
-          MANIFEST_URL: ${{ inputs.manifest-url }}
-          MANIFEST_REVISION: ${{ inputs.manifest-revision }}
-          MANIFEST: ${{ inputs.manifest-file }}
-          SSH_KEY: ${{ secrets.ssh-key }}
-          SSH_KEYSCAN_URL: 'github.com'
-          WORKSPACE: './workspace'
+          manifest-xml: ${{ needs.code.outputs.manifest }}
+          manifest-url: ${{ inputs.manifest-url }}
+          manifest-revision: ${{ inputs.manifest-revision }}
+          manifest: ${{ inputs.manifest-file }}
+          ssh-key: ${{ secrets.ssh-key }}
+          ssh-keyscan-url: 'github.com'
+          workspace: './workspace'
+          install-deps: true
+          install-use-sudo: true
 
       - name: Build vm_minimal
-        uses: ./.github/actions/vm-image
+        uses: ./.github/actions/sel4-build
         with:
-          CONFIG: ${{ inputs.platform }}
-          TARGET: 'vm_minimal'
-          WORKSPACE: './workspace'
+          install-deps: 'true'
+          install-use-sudo: 'true'
+          config: ${{ inputs.platform }}
+          target: 'vm_minimal'
+          workspace: './workspace'
 
       - name: Build vm_multi
-        uses: ./.github/actions/vm-image
+        uses: ./.github/actions/sel4-build
         with:
-          CONFIG: ${{ inputs.platform }}
-          TARGET: 'vm_multi'
-          WORKSPACE: './workspace'
+          config: ${{ inputs.platform }}
+          target: 'vm_multi'
+          workspace: './workspace'
 
       - name: Build sel4test
-        uses: ./.github/actions/vm-image
+        uses: ./.github/actions/sel4-build
         with:
-          CONFIG: ${{ inputs.platform }}
-          TARGET: 'sel4test'
-          WORKSPACE: './workspace'
+          config: ${{ inputs.platform }}
+          target: 'sel4test'
+          workspace: './workspace'
 
       - name: Publish images to artifactory
         if: ${{ github.repository_owner == 'tiiuae' }}
