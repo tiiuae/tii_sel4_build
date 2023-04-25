@@ -27,3 +27,8 @@ runs:
       shell: bash
     - run: action.sh
       shell: bash
+      env:
+        INPUT_MIRROR_DIR: ${{ inputs.mirror-dir }}
+        INPUT_MACHINE: ${{ inputs.machine }}
+        INPUT_RECIPES: ${{ inputs.recipes }}
+        INPUT_WORKSPACE: ${{ inputs.workspace }}
