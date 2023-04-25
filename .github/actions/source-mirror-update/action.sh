@@ -13,7 +13,9 @@ echo "Mirror directory: ${INPUT_MIRROR_DIR:-\(default\)}"
 
 cd "$INPUT_WORKSPACE" || exit 1
 
-export YOCTO_SOURCE_MIRROR_DIR="${INPUT_MIRROR_DIR}"
+export YOCTO_SOURCE_MIRROR_DIR="${INPUT_MIRROR_DIR:-${HOME}/yocto-mirror}"
+[ -n "${INPUT_MACHINE}" ] && export MACHINE=${INPUT_MACHINE}
+
 # shellcheck disable=SC1091
 . setup-mirror-update.sh
 # shellcheck disable=SC2086
