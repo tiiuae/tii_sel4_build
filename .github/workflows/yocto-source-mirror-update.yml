@@ -39,7 +39,7 @@ on:
 
 jobs:
   update-source-mirror:
-    runs-on: [self-hosted, yocto-build-test]
+    runs-on: [self-hosted, yocto-build]
     if: ${{ github.repository_owner == 'tiiuae' }}
     steps:
       - name: Checkout for using local actions
