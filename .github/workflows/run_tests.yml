@@ -16,12 +16,9 @@ on:
         default: 'TEST_BUILD'
         required: false
         type: string
-
-
-
 jobs:
   pytesthw:
-    runs-on: sqa1_test_runner
+    runs-on: [self-hosted, sqa1_test_runner]
     steps:
       - name: Get this repo
         uses: actions/checkout@v3
