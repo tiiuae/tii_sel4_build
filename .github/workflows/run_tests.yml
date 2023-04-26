@@ -8,7 +8,7 @@ on:
     inputs:
       build-num:
         description: 'build number to test'
-        default: '259' # Debug TODO: remove
+        default: '299' # Debug TODO: remove
         required: false
         type: string
       build-name:
@@ -44,14 +44,14 @@ jobs:
           rt-user: ${{ secrets.RT_USER }}
           rt-api-key: ${{ secrets.RT_APIKEY }}
           rt-url: ${{ secrets.RT_URL }}
-          build-num: ${{ inputs.build-num || '259' }}
+          build-num: ${{ inputs.build-num || '299' }}
           input-paths:  |
             tii-sel4-artifacts/rpi4_vm_qemu_virtio/capdl-loader-image-arm-bcm2711:workspace/rpi4_vm_qemu_virtio/
 
       - name: run tests
         uses: ./.github/actions/run_tests
         with:
-          build-num: ${{ inputs.build-num || '259' }}
+          build-num: ${{ inputs.build-num || '299' }}
           build-name: ${{ inputs.build-name || 'TESTBUILD' }}
           input-paths:  |
             workspace/rpi4_vm_qemu_virtio/capdl-loader-image-arm-bcm2711:rpi4_vm_qemu_virtio
