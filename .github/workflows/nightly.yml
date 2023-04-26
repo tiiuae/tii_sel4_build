@@ -17,5 +17,5 @@ jobs:
   run-tests:
     uses: ./.github/workflows/run_tests.yml
     with:
-      build-num: '259' # Debug TODO: ${{ github.run_number }}
+      build-num:  ${{ github.run_number }}
       build-name: 'NIGHTLYBUILD'
