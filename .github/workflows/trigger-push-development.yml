@@ -1,7 +1,7 @@
 ---
 # Copyright 2022, Technology Innovation Institute
 
-name: Check default branch
+name: Trigger check for default branch
 on:
   push:
     branches:

@@ -1,7 +1,7 @@
 ---
 # Copyright 2023, Technology Innovation Institute
 
-name: PR build
+name: PR verification workflow
 on:
   workflow_call:
     inputs:

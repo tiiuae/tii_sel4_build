@@ -1,6 +1,9 @@
-name: Source mirror directory update
+---
+# Copyright 2023, Technology Innovation Institute
+
+name: Workflow for updating Yocto source packages for the self-hosted runner
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       manifest-url:
         description: 'Manifest repository'
@@ -34,8 +37,6 @@ on:
       ssh-key:
         description: 'ssh key for checking out source code'
         required: true
-  schedule:
-    - cron: 0 0 * * 0
 
 jobs:
   update-source-mirror:
