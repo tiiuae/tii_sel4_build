@@ -1,0 +1,14 @@
+---
+# Copyright 2023, Technology Innovation Institute
+
+name: Trigger for source package mirror update for the self-hosted runner
+on:
+  schedule:
+    - cron: 0 0 * * 0
+  workflow_dispatch:
+
+jobs:
+  mirror-update:
+    uses: ./.github/workflows/mirror-update.yml
+    with:
+      ssh-key: ${{ secrets.ssh-key }}

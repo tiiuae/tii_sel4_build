@@ -1,7 +1,7 @@
 ---
 # Copyright 2023, Technology Innovation Institute
 
-name: CI development branch verification
+name: Trigger CI development branch verification
 
 on:
   push:

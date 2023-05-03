@@ -1,7 +1,7 @@
 ---
 # Copyright 2023, Technology Innovation Institute
 
-name: Manual Trigger
+name: Manual trigger for verification
 on:
   workflow_dispatch:
     inputs:
