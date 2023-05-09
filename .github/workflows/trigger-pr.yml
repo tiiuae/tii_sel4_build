@@ -1,0 +1,18 @@
+---
+# Copyright 2023, Technology Innovation Institute
+on:
+  pull_request:
+    types:
+      [opened, reopened, synchronize]
+
+jobs:
+  pr-verification:
+    if: ${{ github.repository_owner == 'tiiuae' }}
+    uses: ./.github/workflows/pr.yml
+    with:
+      branch-override: ${{ github.head_ref }}
+    secrets:
+      ssh-key: ${{ secrets.CI_SSH_KEY }}
+      rt-user: ${{ secrets.RT_USER }}
+      rt-api-key: ${{ secrets.RT_APIKEY }}
+      rt-url: ${{ secrets.RT_URL }}
