@@ -9,7 +9,7 @@ on:
         description: >
           List of pipe '|' separated repository URLs to override. The last
           element of URL must match the name attribute of the project.
-        required: true
+        required: false
         type: string
       branch-override:
         description: >
