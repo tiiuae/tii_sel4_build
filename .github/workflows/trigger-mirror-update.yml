@@ -10,5 +10,5 @@ on:
 jobs:
   mirror-update:
     uses: ./.github/workflows/mirror-update.yml
-    with:
-      ssh-key: ${{ secrets.ssh-key }}
+    secrets:
+      ssh-key: ${{ secrets.CI_SSH_KEY }}
