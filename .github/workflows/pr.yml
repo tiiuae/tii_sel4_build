@@ -5,37 +5,37 @@ name: PR verification workflow
 on:
   workflow_call:
     inputs:
-      REPO_OVERRIDE:
+      repo-override:
         description: >
           List of pipe '|' separated repository URLs to override. The last
           element of URL must match the name attribute of the project.
         required: true
         type: string
-      BRANCH_OVERRIDE:
+      branch-override:
         description: >
           Revision to checkout from manifest repositories if found (branch,
           SHA or tag)
         required: false
         type: string
     secrets:
-      CI_SSH_KEY:
+      ssh-key:
         required: true
-      RT_USER:
+      rt-user:
         required: true
-      RT_APIKEY:
+      rt-api-key:
         required: true
-      RT_URL:
+      rt-url:
         required: true
 
 jobs:
   build-vm-images:
     uses: ./.github/workflows/build-vm-images.yml
     with:
-      repo-override: ${{ inputs.REPO_OVERRIDE }}
-      branch-override: ${{ inputs.BRANCH_OVERRIDE }}
+      repo-override: ${{ inputs.repo-override }}
+      branch-override: ${{ inputs.branch-override }}
     secrets:
-      ssh-key: ${{ secrets.CI_SSH_KEY }}
-      rt-user: ${{ secrets.RT_USER }}
-      rt-api-key: ${{ secrets.RT_APIKEY }}
-      rt-url: ${{ secrets.RT_URL }}
+      ssh-key: ${{ secrets.ssh-key }}
+      rt-user: ${{ secrets.rt-user }}
+      rt-api-key: ${{ secrets.rt-api-key }}
+      rt-url: ${{ secrets.rt-url }}
 
