@@ -19,8 +19,8 @@ echo "::group::Input validation"
 [ ! "$RT_API_KEY" ] && err_exit 1 "RT_API_KEY undefined"
 
 for input in $INPUT_PATHS; do
-  SOURCE_DIR=${input%%:*}
-  DEST_DIR=${input#*:}
+  SOURCE_DIR=$(echo "$input" | cut -d ":" -f 1)
+  DEST_DIR=$(echo "$input" | cut -d ":" -f 2)
   [ ! "$SOURCE_DIR" ] && err_exit 1 "SOURCE_DIR undefined"
   [ ! "$DEST_DIR" ] && err_exit 1 "SOURCE_DIR undefined"
 done
@@ -32,8 +32,8 @@ jf c add --url "$RT_URL" --user "$RT_USER" --password "$RT_API_KEY"
 jf rt ping
 
 for input in $INPUT_PATHS; do
-  SOURCE_DIR=${input%%:*}
-  DEST_DIR=${input#*:}
+  SOURCE_DIR=$(echo "$input" | cut -d ":" -f 1)
+  DEST_DIR=$(echo "$input" | cut -d ":" -f 2)
 
   UPLOAD_DIR=$SOURCE_DIR
   if [ "$BUILD_NUM" ]; then
