@@ -18,16 +18,22 @@ if test -t 0; then
   INTERACTIVE="-it"
 fi
 
+# Resolve runtime specific options
 CONTAINER_ENGINE=${CONTAINER_ENGINE:-"docker"}
-if test "${CONTAINER_ENGINE}" = "podman"; then
+if [ "${CONTAINER_ENGINE}" = "podman" ]; then
   CONTAINER_ENGINE_OPTS="--userns keep-id --pids-limit -1"
   CONTAINER_REGISTRY_PREFIX="localhost/"
 else
   CONTAINER_ENGINE_OPTS="--add-host host.docker.internal:host-gateway"
 fi
 
+CONTAINER_ENV_FLAGS=
+if test -n "${DOCKER_EXPORT}"; then
+  CONTAINER_ENV_FLAGS=$(echo "${DOCKER_EXPORT}" | xargs -d ' ' -Ivar -- echo --env var)
+fi
+
 exec ${CONTAINER_ENGINE} run --rm ${INTERACTIVE} \
-  `echo ${DOCKER_EXPORT} | xargs -d ' ' -Ivar -- echo --env var` \
+  ${CONTAINER_ENV_FLAGS} \
   -v ${DIR}:/workspace:z \
   ${YOCTO_SOURCE_MIRROR_DIR:+--env YOCTO_SOURCE_MIRROR_DIR=/workspace/downloads} \
   ${YOCTO_SOURCE_MIRROR_DIR:+-v "${YOCTO_SOURCE_MIRROR_DIR}":/workspace/downloads:z} \
