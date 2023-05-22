@@ -25,3 +25,5 @@ jobs:
       build-label: 'NIGHTLYBUILD'
       input-paths: |
         tii-sel4-artifacts/rpi4_vm_qemu_virtio/capdl-loader-image-arm-bcm2711-b${{ github.run_number }}:rpi4_vm_qemu_virtio
+        tii-sel4-artifacts/rpi4_vm_minimal/capdl-loader-image-arm-bcm2711-b${{ github.run_number }}:rpi4_vm_minimal
+        tii-sel4-artifacts/rpi4_vm_multi/capdl-loader-image-arm-bcm2711-b${{ github.run_number }}:rpi4_vm_multi
