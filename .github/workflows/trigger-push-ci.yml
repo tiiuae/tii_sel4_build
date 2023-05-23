@@ -10,13 +10,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  pr-check:
     runs-on: ubuntu-latest
     steps:
       - uses: 8BitJonny/gh-get-current-pr@2.2.0
         id: PR
       - run: echo "Your PR number is ${{ steps.PR.outputs.number }} and its JSON is ${{ steps.PR.outputs.pr }}"
   build-vm-images:
+    needs: pr-check
     uses: ./.github/workflows/build-vm-images.yml
     if: needs.pr-check.outputs.number != 'null'
     with:
