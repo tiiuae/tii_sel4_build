@@ -21,7 +21,7 @@ jobs:
   build-vm-images:
     needs: pr-check
     uses: ./.github/workflows/build-vm-images.yml
-    if: needs.pr-check.outputs.number == 'null'
+    if: needs.pr-check.outputs.number
     with:
       branch-override: ${{ github.ref_name }}
     secrets:
