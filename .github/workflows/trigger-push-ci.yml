@@ -12,7 +12,7 @@ on:
 jobs:
   build-vm-images:
     uses: ./.github/workflows/build-vm-images.yml
-    if: github.event_name != 'pull_request'
+    if: needs.pr-check.outputs.number != 'null'
     with:
       branch-override: ${{ github.ref_name }}
     secrets:
