@@ -10,8 +10,23 @@ on:
   workflow_dispatch:
 
 jobs:
+  pr-check:
+    runs-on: ubuntu-latest
+    outputs:
+      number: ${{ steps.PR.outputs.number }}
+    steps:
+      - uses: 8BitJonny/gh-get-current-pr@2.2.0
+        id: PR
+  pr-message:
+    runs-on: ubuntu-latest
+    needs: pr-check
+    if: ${{ needs.pr-check.outputs.number }}
+    steps:
+      - run: echo "PR number is ${{ needs.pr-check.outputs.number }} skip this trigger.."
   build-vm-images:
+    needs: [pr-check, pr-message]
     uses: ./.github/workflows/build-vm-images.yml
+    if: ${{ ! needs.pr-check.outputs.number }}
     with:
       branch-override: ${{ github.ref_name }}
     secrets:
@@ -19,3 +34,4 @@ jobs:
       rt-user: ${{ secrets.RT_USER }}
       rt-api-key: ${{ secrets.RT_APIKEY }}
       rt-url: ${{ secrets.RT_URL }}
+
