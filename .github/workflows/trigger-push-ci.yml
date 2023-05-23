@@ -12,6 +12,8 @@ on:
 jobs:
   pr-check:
     runs-on: ubuntu-latest
+    outputs:
+      number: ${{ steps.PR.outputs.number }}
     steps:
       - uses: 8BitJonny/gh-get-current-pr@2.2.0
         id: PR
