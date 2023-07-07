@@ -11,7 +11,7 @@ if test "$1" = ""; then
   exit 1
 fi
 
-IMAGE=$(ls "${PLATFORM}_$1/images/*")
+IMAGE=$(ls ${PLATFORM}_$1/images/*)
 if test ! -e "${IMAGE}"; then
   echo "$1 is not built for ${PLATFORM}"
   exit 1
