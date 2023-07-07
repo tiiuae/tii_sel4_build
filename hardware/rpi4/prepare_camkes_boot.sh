@@ -18,4 +18,4 @@ if test ! -e "${IMAGE}"; then
 fi
 
 cp "${IMAGE}" "${TFTPBOOT}/image.rpi4"
-cp "${DEPLOYDIR}/bootscripts/tftpboot-bootefi.scr" "${TFTPBOOT}/boot.scr.rpi4"
+cp "${DEPLOYDIR}/bootscripts/tftpboot-go.scr" "${TFTPBOOT}/boot.scr.rpi4"
