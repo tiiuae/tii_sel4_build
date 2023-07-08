@@ -47,7 +47,10 @@ RUN \
 
 # Yocto build dependencies, probably some of these are unnecessarry for
 # our use case (like 'xterm').
-RUN apt-get -y install \
+RUN \
+    apt-get -y update && \
+    apt-get -y upgrade && \
+    apt-get -y install \
         gawk \
         wget \
         git-core \
@@ -64,12 +67,18 @@ RUN apt-get -y install \
         zstd
 
 # screen is required by linux menuconfig
-RUN apt-get -y install \
+RUN \
+    apt-get -y update && \
+    apt-get -y upgrade && \
+    apt-get -y install \
         screen
 
 # Yocto build dependencies will uninstall these cross-compilers,
 # so install them after everything else.
-RUN apt-get -y install \
+RUN \
+    apt-get -y update && \
+    apt-get -y upgrade && \
+    apt-get -y install \
         gcc-aarch64-linux-gnu \
         g++-aarch64-linux-gnu
 
