@@ -83,7 +83,7 @@ yourself when to enable the cache.
 <pre>
 host% <b>export BUILD_CACHE_DIR=~/.tii_sel4_build</b>
 host% <b>echo 'export BUILD_CACHE_DIR='${BUILD_CACHE_DIR} >> ~/.bashrc</b>
-host% <b>mkdir ${BUILD_CACHE_DIR}</b>
+host% <b>mkdir -p ${BUILD_CACHE_DIR}/stack</b>
 </pre>
 
 ## Check out sources
