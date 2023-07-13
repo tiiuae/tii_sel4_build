@@ -98,11 +98,22 @@ host% <b>repo sync</b>
 </pre>
 
 ## Build docker images
+
+Prune the Docker caches before proceeding with building the image:
+
+<pre>
+host% <b>docker image prune -a</b>
+host% <b>docker builder prune -a</b>
+</pre>
+
+Build the image:
+
 <pre>
 host% <b>make docker</b>
 </pre>
 
 ## Prepopulate build cache
+
 <pre>
 host% <b>make build_cache</b>
 </pre>
