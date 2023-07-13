@@ -101,18 +101,6 @@ RUN pip3 install \
     pyfdt \
     pyyaml
 
-# Let's build all the capdl's dependencies. Downloading, compiling and
-# installing the correct GHC version and all of the dependencies takes
-# lots of time and we don't want to redo that everytime we restart the
-# container.
-
-RUN \
-    git clone https://github.com/seL4/capdl.git /home/build/capdl && \
-    cd /home/build/capdl/capDL-tool && \
-    stack build --only-dependencies && \
-    cd /home/build && \
-    rm -rf /home/build/capdl
-
 ENV WORKSPACE=/workspace
 
 WORKDIR /workspace

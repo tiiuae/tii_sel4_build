@@ -71,6 +71,21 @@ host% <b>echo 'export YOCTO_SOURCE_MIRROR_DIR='${YOCTO_SOURCE_MIRROR_DIR} >> ~/.
 host% <b>mkdir ${YOCTO_SOURCE_MIRROR_DIR}</b>
 </pre>
 
+## Configure build cache directory
+
+Compiling Haskell packages takes quite a long time, several minutes on a power machine.
+The ```make``` equivalent, ```stack```, is able to cache the build results and because the
+Haskell sources stay the same for most of the time (versions used are configured in
+```capdl.git```), it is advisable to export a host directory to container to store
+the cached build results across containers. Note that for CI purposes you need to judge
+yourself when to enable the cache.
+
+<pre>
+host% <b>export BUILD_CACHE_DIR=~/.tii_sel4_build</b>
+host% <b>echo 'export BUILD_CACHE_DIR='${BUILD_CACHE_DIR} >> ~/.bashrc</b>
+host% <b>mkdir ${BUILD_CACHE_DIR}</b>
+</pre>
+
 ## Check out sources
 <pre>
 # Choose a working directory, this will be visible in the container at /workspace
@@ -85,6 +100,11 @@ host% <b>repo sync</b>
 ## Build docker images
 <pre>
 host% <b>make docker</b>
+</pre>
+
+## Prepopulate build cache
+<pre>
+host% <b>make build_cache</b>
 </pre>
 
 ## Use it!
