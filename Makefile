@@ -14,10 +14,10 @@ all:
 DOCKER_EXPORT = CAMKES_VM_APP
 export DOCKER_EXPORT
 
-build_cache:
+build_cache: $(BUILD_CACHE_DIR)/stack
 	@scripts/build_cache.sh
 
-build_camkes: .config
+build_camkes: .config $(BUILD_CACHE_DIR)/stack
 	@scripts/build_camkes.sh
 
 build_sel4test: .config

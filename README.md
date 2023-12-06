@@ -115,6 +115,7 @@ host% <b>make docker</b>
 ## Prepopulate build cache
 
 <pre>
+host% <b>make rpi4_defconfig</b>
 host% <b>make build_cache</b>
 </pre>
 

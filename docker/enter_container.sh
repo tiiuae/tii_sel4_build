@@ -38,6 +38,7 @@ exec ${CONTAINER_ENGINE} run --rm ${INTERACTIVE} \
   -v "${DIR}:/workspace:z" \
   ${YOCTO_SOURCE_MIRROR_DIR:+--env YOCTO_SOURCE_MIRROR_DIR=/workspace/downloads} \
   ${YOCTO_SOURCE_MIRROR_DIR:+-v "${YOCTO_SOURCE_MIRROR_DIR}":/workspace/downloads:z} \
+  ${BUILD_CACHE_DIR:+--env BUILD_CACHE_DIR=/home/build/.stack} \
   ${BUILD_CACHE_DIR:+-v "${BUILD_CACHE_DIR}"/stack:/home/build/.stack:z} \
   -v "${HOME}/.ssh:/home/build/.ssh:z" \
   -v "${HOME}/.gitconfig:/home/build/.gitconfig:z" \
