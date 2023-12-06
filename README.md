@@ -223,11 +223,8 @@ host$ <b>make linux-image</b>
 # build qemu seL4 vm_qemu_virtio
 host$ <b>make vm_qemu_virtio</b>
 
-# copy seL4 image to TFTP directory
-host$ <b>cp rpi4_vm_qemu_virtio/images/capdl-loader-image-arm-bcm2711 /var/lib/tftpboot/image.rpi4</b>
-
-# select bootefi command
-host$ <b>cp projects/camkes-vm-images/rpi4/bootscripts/tftpboot-bootefi.scr /var/lib/tftpboot/boot.scr.rpi4</b>
+# prepare TFTP directory for booting CAmkES example on target
+host$ <b>sudo ./tii_sel4_build/hardware/rpi4/prepare_camkes_boot.sh vm_qemu_virtio</b>
 
 # expose driver-VM image via NFS (update your directory to command)
 host$ <b>tar -C /srv/nfs/rpi4 -xjpvf /workspace/projects/camkes-vm-images/rpi4/vm-image-driver.tar.bz2</b>
