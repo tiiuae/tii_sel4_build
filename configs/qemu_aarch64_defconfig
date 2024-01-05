@@ -1,0 +1,4 @@
+AARCH64=1
+PLATFORM=qemu-arm-virt
+NUM_NODES=2
+CROSS_COMPILER_PREFIX=aarch64-linux-gnu-
