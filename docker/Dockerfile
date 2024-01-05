@@ -43,7 +43,8 @@ RUN \
         python3-protobuf \
         python3-simpleeval \
         python3-sortedcontainers \
-        device-tree-compiler
+        device-tree-compiler \
+        qemu-system-arm
 
 # Yocto build dependencies, probably some of these are unnecessarry for
 # our use case (like 'xterm').
