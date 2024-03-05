@@ -11,13 +11,19 @@ all:
 %:: configs/%
 	@cp $< .config
 
+BUILD_CACHE_DIR ?= $(shell realpath .tii_sel4_build)
+export BUILD_CACHE_DIR
+
 DOCKER_EXPORT = CAMKES_VM_APP
 export DOCKER_EXPORT
 
-build_cache: $(BUILD_CACHE_DIR)/stack
+$(BUILD_CACHE_DIR)/stack:
+	mkdir -p $(BUILD_CACHE_DIR)/stack
 	@scripts/build_cache.sh
 
-build_camkes: .config $(BUILD_CACHE_DIR)/stack
+build_cache: $(BUILD_CACHE_DIR)/stack
+
+build_camkes: .config build_cache
 	@scripts/build_camkes.sh
 
 build_sel4test: .config
