@@ -43,7 +43,10 @@ phony_explicit:
 	docker
 
 docker:
-	docker build docker -t tiiuae/build:latest
+	docker build \
+		--build-arg UID=$(shell id -u) \
+		--build-arg GID=$(shell id -g) \
+		docker -t tiiuae/build:latest
 
 linux-image:
 	@scripts/build_yocto.sh

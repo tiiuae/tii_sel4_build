@@ -1,5 +1,8 @@
 FROM debian:bullseye
 
+ARG UID=1000
+ARG GID=1000
+
 # tzdata noninteractive install
 ENV TZ=Europe/Helsinki
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
@@ -84,7 +87,7 @@ RUN \
         g++-aarch64-linux-gnu
 
 RUN echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && locale-gen
-RUN useradd -m -d /home/build -s /bin/bash -G sudo -u 1000 build
+RUN useradd -m -d /home/build -s /bin/bash -G sudo -u $UID -g $GID build
 RUN echo 'build:build' | chpasswd
 RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN printf '\n\n\
