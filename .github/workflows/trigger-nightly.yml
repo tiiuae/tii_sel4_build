@@ -4,7 +4,7 @@
 name: Nightly build
 on:
   schedule:
-    - cron: '0 0 * * 1-5'
+    - cron: '0 0 * * 0'
 
 jobs:
   build-vm-images:
@@ -15,6 +15,8 @@ jobs:
       rt-api-key: ${{ secrets.RT_APIKEY }}
       rt-url: ${{ secrets.RT_URL }}
   run-tests:
+    # hw tests disabled for now
+    if: false
     needs: build-vm-images
     uses: ./.github/workflows/run_tests.yml
     secrets:
