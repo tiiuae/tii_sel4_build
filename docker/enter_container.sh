@@ -35,12 +35,13 @@ fi
 # shellcheck disable=SC2086
 exec ${CONTAINER_ENGINE} run --rm ${INTERACTIVE} \
   ${CONTAINER_ENV_FLAGS} \
-  -v "${DIR}:/workspace:z" \
-  ${YOCTO_SOURCE_MIRROR_DIR:+--env YOCTO_SOURCE_MIRROR_DIR=/workspace/downloads} \
-  ${YOCTO_SOURCE_MIRROR_DIR:+-v "${YOCTO_SOURCE_MIRROR_DIR}":/workspace/downloads:z} \
-  ${BUILD_CACHE_DIR:+--env BUILD_CACHE_DIR=/home/build/.stack} \
-  ${BUILD_CACHE_DIR:+-v "${BUILD_CACHE_DIR}"/stack:/home/build/.stack:z} \
-  -v "${HOME}/.ssh:/home/build/.ssh:z" \
-  -v "${HOME}/.gitconfig:/home/build/.gitconfig:z" \
+  -w "${DIR}" \
+  -v "${DIR}:${DIR}:z" \
+  ${YOCTO_SOURCE_MIRROR_DIR:+--env YOCTO_SOURCE_MIRROR_DIR="${DIR}"/downloads} \
+  ${YOCTO_SOURCE_MIRROR_DIR:+-v "${YOCTO_SOURCE_MIRROR_DIR}":"${DIR}"/downloads:z} \
+  ${BUILD_CACHE_DIR:+--env BUILD_CACHE_DIR="${HOME}"/.stack} \
+  ${BUILD_CACHE_DIR:+-v "${BUILD_CACHE_DIR}"/stack:"${HOME}"/.stack:z} \
+  -v "${HOME}/.ssh:${HOME}/.ssh:z" \
+  -v "${HOME}/.gitconfig:${HOME}/.gitconfig:z" \
   ${CONTAINER_ENGINE_OPTS} \
   "${CONTAINER_REGISTRY_PREFIX}tiiuae/build:latest" ${CMD}

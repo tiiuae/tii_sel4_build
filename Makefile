@@ -46,6 +46,9 @@ docker:
 	docker build \
 		--build-arg UID=$(shell id -u) \
 		--build-arg GID=$(shell id -g) \
+		--build-arg USER=$(shell id -u -n) \
+		--build-arg GROUP=$(shell id -u -n) \
+		--build-arg HOME=$(HOME) \
 		docker -t tiiuae/build:latest
 
 linux-image:
