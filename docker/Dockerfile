@@ -2,6 +2,9 @@ FROM debian:bullseye
 
 ARG UID=1000
 ARG GID=1000
+ARG USER=build
+ARG GROUP=build
+ARG HOME=/home/build
 
 # tzdata noninteractive install
 ENV TZ=Europe/Helsinki
@@ -87,15 +90,16 @@ RUN \
         g++-aarch64-linux-gnu
 
 RUN echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && locale-gen
-RUN useradd -m -d /home/build -s /bin/bash -G sudo -u $UID -g $GID build
-RUN echo 'build:build' | chpasswd
+RUN groupadd -g $GID $GROUP
+RUN useradd -m -d $HOME -s /bin/bash -G sudo -u $UID -g $GID $USER
+RUN passwd -d $USER
 RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN printf '\n\n\
 eval $(ssh-agent -s &> /dev/null)\n\
-find /home/build/.ssh/ -type f -exec grep -l "PRIVATE" {} \; | xargs ssh-add &> /dev/null\n'\
->> /home/build/.bashrc
-RUN printf 'add-auto-load-safe-path /workspace/.gdbinit' >> /home/build/.gdbinit
-USER build
+find '$HOME'/.ssh/ -type f -exec grep -l "PRIVATE" {} \; | xargs ssh-add &> /dev/null\n'\
+>> $HOME/.bashrc
+RUN printf 'add-auto-load-safe-path /workspace/.gdbinit' >> $HOME/.gdbinit
+USER $USER
 
 RUN pip3 install \
     aenum \
@@ -104,7 +108,3 @@ RUN pip3 install \
     plyplus \
     pyfdt \
     pyyaml
-
-ENV WORKSPACE=/workspace
-
-WORKDIR /workspace
