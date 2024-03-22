@@ -17,18 +17,8 @@ fi
 
 . "${LAYERS_ROOT}/poky/oe-init-build-env" "$@"
 
-grep meta-sel4 conf/bblayers.conf 2>/dev/null 1>&2 || \
-  printf 'BBLAYERS += "%s/meta-sel4"\n' "$LAYERS_ROOT" >> conf/bblayers.conf
+sed -i -e '/LAYERS_ROOT/d' conf/bblayers.conf
 
-grep meta-raspberrypi conf/bblayers.conf 2>/dev/null 1>&2 || \
-  printf 'BBLAYERS += "%s/meta-raspberrypi"\n' "$LAYERS_ROOT" >> conf/bblayers.conf
-
-grep meta-oe conf/bblayers.conf 2>/dev/null 1>&2 || \
-  printf 'BBLAYERS += "%s/meta-openembedded/meta-oe"\n' "$LAYERS_ROOT" >> conf/bblayers.conf
-
-grep meta-networking conf/bblayers.conf 2>/dev/null 1>&2 || \
-  printf 'BBLAYERS += "%s/meta-openembedded/meta-networking"\n' "$LAYERS_ROOT" >> conf/bblayers.conf
-
-# meta-networking needs meta-python
-grep meta-python conf/bblayers.conf 2>/dev/null 1>&2 || \
-  printf 'BBLAYERS += "%s/meta-openembedded/meta-python"\n' "$LAYERS_ROOT" >> conf/bblayers.conf
+echo 'LAYERS_ROOT = "'${LAYERS_ROOT}'"' >> conf/bblayers.conf
+echo 'include ${LAYERS_ROOT}/conf/layers/extra.conf' >> conf/bblayers.conf
+echo 'include ${LAYERS_ROOT}/conf/layers/machine/${MACHINE}.conf' >> conf/bblayers.conf
